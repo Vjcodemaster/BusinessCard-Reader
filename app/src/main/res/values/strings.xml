@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Business Card OCR</string>
+    <string name="scan">Scan card</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="low_storage_error">Ocr dependencies cannot be downloaded due to low device storage</string>
+</resources>

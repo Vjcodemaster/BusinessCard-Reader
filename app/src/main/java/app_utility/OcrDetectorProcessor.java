@@ -21,6 +21,8 @@ import android.util.SparseArray;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.text.TextBlock;
 
+import java.util.HashSet;
+
 /**
  * A very simple Processor which gets detected TextBlocks and adds them to the overlay
  * as OcrGraphics.
@@ -28,6 +30,7 @@ import com.google.android.gms.vision.text.TextBlock;
 public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
 
     public GraphicOverlay<OcrGraphic> graphicOverlay;
+    HashSet<String> hsCardData = new HashSet<>();
 
     public OcrDetectorProcessor(GraphicOverlay<OcrGraphic> ocrGraphicOverlay) {
         graphicOverlay = ocrGraphicOverlay;
@@ -48,6 +51,7 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
             TextBlock item = items.valueAt(i);
             if (item != null && item.getValue() != null) {
                 Log.d("OcrDetectorProcessor", "Text detected! " + item.getValue());
+                hsCardData.add(item.getValue());
                 OcrGraphic graphic = new OcrGraphic(graphicOverlay, item);
                 graphicOverlay.add(graphic);
             }

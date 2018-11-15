@@ -343,8 +343,13 @@ public class CameraSource {
 
             // SurfaceTexture was introduced in Honeycomb (11), so if we are running and
             // old version of Android. fall back to use SurfaceView.
-            dummySurfaceTexture = new SurfaceTexture(DUMMY_TEXTURE_NAME);
-            camera.setPreviewTexture(dummySurfaceTexture);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                dummySurfaceTexture = new SurfaceTexture(DUMMY_TEXTURE_NAME);
+                camera.setPreviewTexture(dummySurfaceTexture);
+            } else {
+                dummySurfaceView = new SurfaceView(context);
+                camera.setPreviewDisplay(dummySurfaceView.getHolder());
+            }
             camera.startPreview();
 
             processingThread = new Thread(frameProcessor);

@@ -1,22 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/topLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true">
 
-    <app_utility.CameraSourcePreview
-        android:id="@+id/preview"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:keepScreenOn="true">
 
-        <app_utility.GraphicOverlay
-            android:id="@+id/graphicOverlay"
+        <app_utility.CameraSourcePreview
+            android:id="@+id/preview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="400dp">
 
-    </app_utility.CameraSourcePreview>
+            <app_utility.GraphicOverlay
+                android:id="@+id/graphicOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
-</LinearLayout>
+        </app_utility.CameraSourcePreview>
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/ib_capture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:visibility="visible"
+        android:layout_gravity="bottom|center"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/camera_red" />
+</FrameLayout>

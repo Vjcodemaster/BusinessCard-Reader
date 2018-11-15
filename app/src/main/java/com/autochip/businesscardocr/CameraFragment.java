@@ -1,24 +1,40 @@
 package com.autochip.businesscardocr;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Dialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Objects;
 
 import app_utility.CameraSource;
@@ -27,6 +43,8 @@ import app_utility.GraphicOverlay;
 import app_utility.OcrDetectorProcessor;
 import app_utility.OcrGraphic;
 import app_utility.OnFragmentInteractionListener;
+
+import static com.autochip.businesscardocr.MainActivity.onFragmentInteractionListener;
 
 
 /**
@@ -58,6 +76,8 @@ public class CameraFragment extends Fragment {
     private CameraSource cameraSource;
     private CameraSourcePreview preview;
     private GraphicOverlay<OcrGraphic> graphicOverlay;
+    private ImageButton ibCapture;
+    TextRecognizer textRecognizer;
 
     public CameraFragment() {
         // Required empty public constructor
@@ -104,6 +124,111 @@ public class CameraFragment extends Fragment {
     void init(View view){
         preview = view.findViewById(R.id.preview);
         graphicOverlay = view.findViewById(R.id.graphicOverlay);
+        ibCapture = view.findViewById(R.id.ib_capture);
+
+        ibCapture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getActivity(), "Clicked", Toast.LENGTH_SHORT).show();
+                cameraSource.takePicture(null, new CameraSource.PictureCallback() {
+                    private File imageFile;
+                    private int rotation = 0;
+                    ArrayList<String> alCardInfo = new ArrayList<>();
+
+                    @Override
+                    public void onPictureTaken(byte[] bytes) {
+                        try {
+                            // convert byte array into bitmap
+                            Bitmap loadedImage = null;
+                            Bitmap rotatedBitmap = null;
+                            loadedImage = BitmapFactory.decodeByteArray(bytes, 0,
+                                    bytes.length);
+
+                            // rotate Image
+                            Matrix rotateMatrix = new Matrix();
+                            rotateMatrix.postRotate(rotation);
+                            rotatedBitmap = Bitmap.createBitmap(loadedImage, 0, 0,
+                                    loadedImage.getWidth(), loadedImage.getHeight(),
+                                    rotateMatrix, false);
+                            String state = Environment.getExternalStorageState();
+                            File folder = null;
+                            if (state.contains(Environment.MEDIA_MOUNTED)) {
+                                folder = new File(Environment
+                                        .getExternalStorageDirectory() + "/Demo");
+                            } else {
+                                folder = new File(Environment
+                                        .getExternalStorageDirectory() + "/Demo");
+                            }
+
+                            boolean success = true;
+                            if (!folder.exists()) {
+                                success = folder.mkdirs();
+                            }
+                            if (success) {
+                                java.util.Date date = new java.util.Date();
+                                imageFile = new File(folder.getAbsolutePath()
+                                        + File.separator
+                                        //+ new Timestamp(date.getTime()).toString()
+                                        + "Image.jpg");
+
+                                imageFile.createNewFile();
+                            } else {
+                                Toast.makeText(getActivity(), "Image Not saved",
+                                        Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+
+                            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+
+                            // save image into gallery
+                            rotatedBitmap = resize(rotatedBitmap, 1024, 768);
+                            Frame imageFrame = new Frame.Builder()
+                                    .setBitmap(rotatedBitmap)
+                                    .build();
+
+                            SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
+
+
+                            for (int i = 0; i < textBlocks.size(); i++) {
+
+                                TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
+
+                                String text = textBlock.getValue();
+
+                                alCardInfo.add(text);
+                                Toast.makeText(getActivity(), text , Toast.LENGTH_SHORT).show();
+
+                            }
+                            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
+
+                            FileOutputStream fout = new FileOutputStream(imageFile);
+                            fout.write(ostream.toByteArray());
+                            fout.close();
+                            ContentValues values = new ContentValues();
+
+                            values.put(MediaStore.Images.Media.DATE_TAKEN,
+                                    System.currentTimeMillis());
+                            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                            values.put(MediaStore.MediaColumns.DATA,
+                                    imageFile.getAbsolutePath());
+
+                            getActivity().getContentResolver().insert(
+                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+                            getActivity().setResult(Activity.RESULT_OK); //add this
+                            cameraSource.stop();
+                            preview.stop();
+                            preview.release();
+                            onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED",rotatedBitmap, alCardInfo);
+                            getActivity().getSupportFragmentManager().popBackStack();
+                            //finish();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        });
     }
 
     /**
@@ -171,7 +296,7 @@ public class CameraFragment extends Fragment {
         // is set to receive the text recognition results, track the text, and maintain
         // graphics for each text block on screen.  The factory is used by the multi-processor to
         // create a separate tracker instance for each text block.
-        TextRecognizer textRecognizer = new TextRecognizer.Builder(context).build();
+        textRecognizer = new TextRecognizer.Builder(context).build();
         textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
 
         if (!textRecognizer.isOperational()) {
@@ -207,6 +332,28 @@ public class CameraFragment extends Fragment {
                         .setFlashMode(useFlash ? Camera.Parameters.FLASH_MODE_TORCH : null)
                         .setFocusMode(autoFocus ? Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE : null)
                         .build();
+
+    }
+
+    private Bitmap resize(Bitmap image, int maxWidth, int maxHeight) {
+        if (maxHeight > 0 && maxWidth > 0) {
+            int width = image.getWidth();
+            int height = image.getHeight();
+            float ratioBitmap = (float) width / (float) height;
+            float ratioMax = (float) maxWidth / (float) maxHeight;
+
+            int finalWidth = maxWidth;
+            int finalHeight = maxHeight;
+            if (ratioMax > 1) {
+                finalWidth = (int) ((float) maxHeight * ratioBitmap);
+            } else {
+                finalHeight = (int) ((float) maxWidth / ratioBitmap);
+            }
+            image = Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
+            return image;
+        } else {
+            return image;
+        }
     }
 
     /**

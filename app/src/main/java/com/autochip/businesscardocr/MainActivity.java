@@ -2,6 +2,7 @@ package com.autochip.businesscardocr;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
@@ -12,6 +13,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.util.ArrayList;
 
 import app_utility.OnFragmentInteractionListener;
 import app_utility.PermissionHandler;
@@ -28,12 +31,13 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     private int CAMERA_CODE = 1777;
     public static String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA};
     private int nPermissionFlag = 0;
+    public static OnFragmentInteractionListener onFragmentInteractionListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        onFragmentInteractionListener = this;
         initViews();
     }
 
@@ -59,7 +63,9 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
                 newFragment = CameraFragment.newInstance("", "");
                 transaction = getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.fl_container, newFragment, null);
+                transaction.addToBackStack(null);
                 transaction.commit();
+                btnScan.setVisibility(View.GONE);
             }
         });
     }
@@ -100,7 +106,11 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     }
 
     @Override
-    public void onFragmentMessage(String TAG, Object data, boolean isEnabled) {
-
+    public void onFragmentMessage(String TAG, Bitmap bCardImage, ArrayList<String> alCardInfo) {
+        switch (TAG){
+            case "DATA_RECEIVED":
+                btnScan.setVisibility(View.VISIBLE);
+                break;
+        }
     }
 }

@@ -35,7 +35,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import app_utility.CameraSource;
 import app_utility.CameraSourcePreview;
@@ -78,6 +81,11 @@ public class CameraFragment extends Fragment {
     private GraphicOverlay<OcrGraphic> graphicOverlay;
     private ImageButton ibCapture;
     TextRecognizer textRecognizer;
+    HashMap<String, String> hmCardInfo = new HashMap<>();
+
+    boolean hasGotEmailID = false;
+    boolean hasGotName = false;
+    boolean hasGotNumber = false;
 
     public CameraFragment() {
         // Required empty public constructor
@@ -121,7 +129,7 @@ public class CameraFragment extends Fragment {
         return view;
     }
 
-    void init(View view){
+    void init(View view) {
         preview = view.findViewById(R.id.preview);
         graphicOverlay = view.findViewById(R.id.graphicOverlay);
         ibCapture = view.findViewById(R.id.ib_capture);
@@ -133,7 +141,7 @@ public class CameraFragment extends Fragment {
                 cameraSource.takePicture(null, new CameraSource.PictureCallback() {
                     private File imageFile;
                     private int rotation = 0;
-                    ArrayList<String> alCardInfo = new ArrayList<>();
+
 
                     @Override
                     public void onPictureTaken(byte[] bytes) {
@@ -195,9 +203,14 @@ public class CameraFragment extends Fragment {
 
                                 String text = textBlock.getValue();
 
-                                alCardInfo.add(text);
-                                Toast.makeText(getActivity(), text , Toast.LENGTH_SHORT).show();
+                                //alCardInfo.add(text);
+                                //Toast.makeText(getActivity(), text , Toast.LENGTH_SHORT).show();
 
+                                extractInfo(text);
+                                /*extractData(firstLine);
+                                extractName(text);
+                                extractEmail(text);
+                                extractPhone(text);*/
                             }
                             rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
 
@@ -219,8 +232,8 @@ public class CameraFragment extends Fragment {
                             cameraSource.stop();
                             preview.stop();
                             preview.release();
-                            onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED",rotatedBitmap, alCardInfo);
                             getActivity().getSupportFragmentManager().popBackStack();
+                            onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED", rotatedBitmap, hmCardInfo);
                             //finish();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -230,6 +243,220 @@ public class CameraFragment extends Fragment {
             }
         });
     }
+
+    void extractInfo(String text) {
+        String name;
+        //StringBuilder sb = new StringBuilder();
+        String email;
+        String firstLine;
+        String secondLine = null;
+        String thirdLine = null;
+        String[] lines = text.split(Objects.requireNonNull(System.getProperty("line.separator")));
+        String[] matches = new String[]{"Email:", "Email", "email", "E-mail", "e-mail", "-mail"};
+        firstLine = lines[0];
+
+        if (lines.length > 1)
+            secondLine = lines[1];
+        if (lines.length > 2)
+            thirdLine = lines[2];
+
+        if (!hasGotEmailID && firstLine.contains("@")) {
+            //String regex_script = "\\Email:\\Email\\email\\E-mail\\e-mail";
+            //firstLine = firstLine.replaceAll(regex_script, "").trim();
+            //boolean found = false;
+            for (String s : matches) {
+                if (firstLine.contains(s)) {
+                    email = firstLine.replace(s, "");
+                    firstLine = email.replaceAll("[-+^:,]", "").trim();
+                    break;
+                }
+            }
+            hmCardInfo.put("email", firstLine);
+            hasGotEmailID = true;
+        } else {
+            if (!hasGotName && !firstLine.contains("@") && !firstLine.contains(",") && !firstLine.contains(".com")) {
+                name = firstLine.replace(".", "");
+                //sb.append(name);
+                hmCardInfo.put("name", name);
+                hasGotName = true;
+            } else {
+                String s1 = firstLine.replaceAll("[^0-9]", "");
+                if (!hasGotNumber && s1.length() >= 10) {
+                    if (s1.length() != 10)
+                        s1 = "+" + s1;
+                    hmCardInfo.put("number", s1);
+                    hasGotNumber = true;
+                }
+            }
+        }
+        if (secondLine != null)
+            if (!hasGotEmailID && secondLine.contains("@")) {
+                for (String s : matches) {
+                    if (secondLine.contains(s)) {
+                        email = secondLine.replace(s, "");
+                        secondLine = email.replaceAll("[-+^:,]", "").trim();
+                        break;
+                    }
+                }
+                hmCardInfo.put("email", secondLine);
+                hasGotEmailID = true;
+            } else {
+                if (!hasGotName && !secondLine.contains("@") && !secondLine.contains(",") && !secondLine.contains(".com")) {
+                    name = secondLine.replace(".", "");
+                    //sb.append(" ").append(name);
+                    hmCardInfo.put("name", name);
+                    hasGotName = true;
+                } else {
+                    String s1 = secondLine.replaceAll("[^0-9]", "");
+                    if (!hasGotNumber && s1.length() >= 10) {
+                        if (s1.length() != 10)
+                            s1 = "+" + s1;
+                        hmCardInfo.put("number", s1);
+                        hasGotNumber = true;
+                    }
+                }
+            }
+        if (thirdLine != null)
+            if (!hasGotEmailID && thirdLine.contains("@")) {
+                for (String s : matches) {
+                    if (thirdLine.contains(s)) {
+                        email = thirdLine.replace(s, "");
+                        thirdLine = email.replaceAll("[-+^:,]", "").trim();
+                        break;
+                    }
+                }
+                hmCardInfo.put("email", thirdLine);
+                hasGotEmailID = true;
+            } else {
+                if (!hasGotName && !thirdLine.contains("@") && !thirdLine.contains(",") && !thirdLine.contains(".com")) {
+                    name = thirdLine.replace(".", "");
+                    //sb.append(" ").append(name);
+                    hmCardInfo.put("name", name);
+                    hasGotName = true;
+                } else {
+                    String s1 = thirdLine.replaceAll("[^0-9]", "");
+                    if (!hasGotNumber && s1.length() >= 10) {
+                        if (s1.length() != 10)
+                            s1 = "+" + s1;
+                        hmCardInfo.put("number", s1);
+                        hasGotNumber = true;
+                    }
+                }
+            }
+    }
+
+    /*void extractInfo(String text){
+        String name;
+        StringBuilder sb = new StringBuilder();
+        String firstLine;
+        String secondLine = null;
+        String thirdLine = null;
+        String[] lines = text.split(Objects.requireNonNull(System.getProperty("line.separator")));
+        firstLine = lines[0];
+
+        if (lines.length > 1)
+            secondLine = lines[1];
+        if (lines.length > 2)
+            thirdLine = lines[2];
+
+        if(firstLine.contains("@")){
+            hmCardInfo.put("email", text);
+        } else {
+            if(!firstLine.contains("@") && !firstLine.contains(".") && !firstLine.contains(",")){
+                name = firstLine.replace(".", "");
+                sb.append(name);
+                hmCardInfo.put("name", sb.toString());
+            } else {
+                String s1 = firstLine.replaceAll("[^0-9]", "");
+                if (s1.length() == 10) {
+                    hmCardInfo.put("number", s1);
+                }
+            }
+        }
+        if(secondLine!=null)
+        if(secondLine.contains("@")){
+            hmCardInfo.put("email", text);
+        } else {
+            if(!secondLine.contains("@") && !secondLine.contains(".") && !secondLine.contains(",")){
+                name = secondLine.replace(".", "");
+                sb.append(" ").append(name);
+                hmCardInfo.put("name", sb.toString());
+            } else {
+                String s1 = secondLine.replaceAll("[^0-9]", "");
+                if (s1.length() == 10) {
+                    hmCardInfo.put("number", s1);
+                }
+            }
+        }
+        if(thirdLine!=null)
+        if(thirdLine.contains("@")){
+            hmCardInfo.put("email", text);
+        } else {
+            if(!thirdLine.contains("@") && !thirdLine.contains(".") && !thirdLine.contains(",")){
+                name = thirdLine.replace(".", "");
+                sb.append(" ").append(name);
+                hmCardInfo.put("name", sb.toString());
+            } else {
+                String s1 = thirdLine.replaceAll("[^0-9]", "");
+                if (s1.length() == 10) {
+                    hmCardInfo.put("number", s1);
+                }
+            }
+        }
+    }*/
+
+    public static String extractNumber(final String str) {
+
+        if (str == null || str.isEmpty()) return "";
+
+        StringBuilder sb = new StringBuilder();
+        boolean found = false;
+        for (char c : str.toCharArray()) {
+            if (Character.isDigit(c)) {
+                sb.append(c);
+                found = true;
+            } else if (found) {
+                // If we already found a digit before and this char is not a digit, stop looping
+                break;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /*public void extractData(String str) {
+        System.out.println("Getting the Name");
+        final String NAME_REGEX = "^([A-Z]([a-z]*|\\.) *){1,2}([A-Z][a-z]+-?)+$";
+        Pattern p = Pattern.compile(NAME_REGEX, Pattern.MULTILINE);
+        Matcher m = p.matcher(str);
+        if (m.find()) {
+            System.out.println(m.group());
+            alCardInfo.add(m.group());
+            return;
+            //displayName.setText(m.group());
+        }
+
+        System.out.println("Getting the email");
+        final String EMAIL_REGEX = "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])";
+        Pattern p1 = Pattern.compile(EMAIL_REGEX, Pattern.MULTILINE);
+        Matcher m1 = p1.matcher(str);   // get a matcher object
+        if (m1.find()) {
+            System.out.println(m1.group());
+            alCardInfo.add(m1.group());
+            return;
+            //displayEmail.setText(m.group());
+        }
+
+        System.out.println("Getting Phone Number");
+        final String PHONE_REGEX = "(?:^|\\D)(\\d{3})[)\\-. ]*?(\\d{3})[\\-. ]*?(\\d{4})(?:$|\\D)";
+        Pattern p2 = Pattern.compile(PHONE_REGEX, Pattern.MULTILINE);
+        Matcher m2 = p2.matcher(str);   // get a matcher object
+        if (m2.find()) {
+            System.out.println(m2.group());
+            alCardInfo.add(m2.group());
+            //displayPhone.setText(m.group());
+        }
+    }*/
 
     /**
      * Restarts the camera.
@@ -284,7 +511,7 @@ public class CameraFragment extends Fragment {
      * Creates and starts the camera.  Note that this uses a higher resolution in comparison
      * to other detection examples to enable the ocr detector to detect small text samples
      * at long distances.
-     *
+     * <p>
      * Suppressing InlinedApi since there is a check that the minimum version is met before using
      * the constant.
      */
@@ -297,7 +524,7 @@ public class CameraFragment extends Fragment {
         // graphics for each text block on screen.  The factory is used by the multi-processor to
         // create a separate tracker instance for each text block.
         textRecognizer = new TextRecognizer.Builder(context).build();
-        textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
+        //textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
 
         if (!textRecognizer.isOperational()) {
             // Note: The first time that an app using a Vision API is installed on a

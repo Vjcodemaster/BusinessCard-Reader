@@ -12,9 +12,11 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import app_utility.OnFragmentInteractionListener;
 import app_utility.PermissionHandler;
@@ -27,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     TextView tvName;
     TextView tvPhoneNo;
     TextView tvEmail;
+    private LinearLayout llDisplay;
 
     private int CAMERA_CODE = 1777;
     public static String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA};
@@ -54,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         tvName = findViewById(R.id.tv_name);
         tvPhoneNo = findViewById(R.id.tv_phone);
         tvEmail = findViewById(R.id.tv_email);
+        llDisplay = findViewById(R.id.ll_display);
 
         btnScan.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -106,10 +110,14 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     }
 
     @Override
-    public void onFragmentMessage(String TAG, Bitmap bCardImage, ArrayList<String> alCardInfo) {
+    public void onFragmentMessage(String TAG, Bitmap bCardImage, HashMap<String, String> hsCardInfo) {
         switch (TAG){
             case "DATA_RECEIVED":
                 btnScan.setVisibility(View.VISIBLE);
+                llDisplay.setVisibility(View.VISIBLE);
+                tvName.setText(hsCardInfo.get("name"));
+                tvEmail.setText(hsCardInfo.get("email"));
+                tvPhoneNo.setText(hsCardInfo.get("number"));
                 break;
         }
     }

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -69,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
                 transaction.replace(R.id.fl_container, newFragment, null);
                 transaction.addToBackStack(null);
                 transaction.commit();
-                btnScan.setVisibility(View.GONE);
+                //btnScan.setVisibility(View.GONE);
             }
         });
     }
@@ -125,6 +126,15 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
                     tvPhoneNo.setText(saNumbers[0]);
                 }
                 break;
+        }
+    }
+
+    @Override
+    public void onBackPressed(){
+        super.onBackPressed();
+        int count = getSupportFragmentManager().getBackStackEntryCount();
+        if (count > 0) {
+            getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         }
     }
 }

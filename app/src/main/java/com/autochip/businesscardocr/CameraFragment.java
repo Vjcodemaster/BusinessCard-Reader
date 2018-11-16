@@ -16,7 +16,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,13 +39,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import app_utility.CameraSource;
 import app_utility.CameraSourcePreview;
 import app_utility.GraphicOverlay;
-import app_utility.OcrDetectorProcessor;
 import app_utility.OcrGraphic;
 import app_utility.OnFragmentInteractionListener;
 
@@ -87,7 +84,7 @@ public class CameraFragment extends Fragment {
 
     boolean hasGotEmailID = false;
     boolean hasGotName = false;
-    boolean hasGotNumber = false;
+    //boolean hasGotNumber = false;
 
     HashSet<String> hsNumbers;
 
@@ -146,13 +143,12 @@ public class CameraFragment extends Fragment {
                     private File imageFile;
                     private int rotation = 0;
 
-
                     @Override
                     public void onPictureTaken(byte[] bytes) {
                         try {
                             // convert byte array into bitmap
-                            Bitmap loadedImage = null;
-                            Bitmap rotatedBitmap = null;
+                            Bitmap loadedImage;
+                            Bitmap rotatedBitmap;
                             loadedImage = BitmapFactory.decodeByteArray(bytes, 0,
                                     bytes.length);
 
@@ -163,7 +159,7 @@ public class CameraFragment extends Fragment {
                                     loadedImage.getWidth(), loadedImage.getHeight(),
                                     rotateMatrix, false);
                             String state = Environment.getExternalStorageState();
-                            File folder = null;
+                            File folder;
                             if (state.contains(Environment.MEDIA_MOUNTED)) {
                                 folder = new File(Environment
                                         .getExternalStorageDirectory() + "/Demo");
@@ -190,8 +186,6 @@ public class CameraFragment extends Fragment {
                                 return;
                             }
 
-                            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-
                             // save image into gallery
                             rotatedBitmap = resize(rotatedBitmap, 1024, 768);
                             Frame imageFrame = new Frame.Builder()
@@ -204,23 +198,16 @@ public class CameraFragment extends Fragment {
                             for (int i = 0; i < textBlocks.size(); i++) {
 
                                 TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
-
                                 String text = textBlock.getValue();
-
-                                //alCardInfo.add(text);
-                                //Toast.makeText(getActivity(), text , Toast.LENGTH_SHORT).show();
-
                                 extractInfo(text);
-                                /*extractData(firstLine);
-                                extractName(text);
-                                extractEmail(text);
-                                extractPhone(text);*/
                             }
-                            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
 
-                            FileOutputStream fout = new FileOutputStream(imageFile);
-                            fout.write(ostream.toByteArray());
-                            fout.close();
+                            ByteArrayOutputStream baOutPutStream = new ByteArrayOutputStream();
+                            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baOutPutStream);
+
+                            FileOutputStream fileOutputStream = new FileOutputStream(imageFile);
+                            fileOutputStream.write(baOutPutStream.toByteArray());
+                            fileOutputStream.close();
                             ContentValues values = new ContentValues();
 
                             values.put(MediaStore.Images.Media.DATE_TAKEN,
@@ -236,8 +223,9 @@ public class CameraFragment extends Fragment {
                             cameraSource.stop();
                             preview.stop();
                             preview.release();
-                            getActivity().getSupportFragmentManager().popBackStack();
-                            onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED", rotatedBitmap, hmCardInfo);
+                            //getActivity().getSupportFragmentManager().popBackStack();
+                            //onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED", rotatedBitmap, hmCardInfo);
+                            loadDisplayFragment();
                             //finish();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -252,22 +240,50 @@ public class CameraFragment extends Fragment {
         String name;
         //StringBuilder sb = new StringBuilder();
         String email;
-        String firstLine;
-        String secondLine = null;
-        String thirdLine = null;
-        String fourthLine = null;
-        String fifthLine = null;
+        //String firstLine;
+        //String secondLine = null;
+        //String thirdLine = null;
+        //String fourthLine = null;
+        //String fifthLine = null;
         String[] lines = text.split(Objects.requireNonNull(System.getProperty("line.separator")));
         String[] matches = new String[]{"Email:", "Email", "email", "E-mail", "e-mail", "-mail"};
-        firstLine = lines[0];
+
+        ArrayList<String> alText = new ArrayList<>(Arrays.asList(lines));
+
+        for (int i = 0; i < alText.size(); i++) {
+            String sSingleLine = alText.get(i);
+            if (sSingleLine != null)
+                if (!hasGotEmailID && sSingleLine.contains("@")) {
+                    for (String s : matches) {
+                        if (sSingleLine.contains(s)) {
+                            email = sSingleLine.replace(s, "");
+                            sSingleLine = email.replaceAll("[-+^:,]", "").trim();
+                            break;
+                        }
+                    }
+                    hmCardInfo.put("email", sSingleLine);
+                    hasGotEmailID = true;
+                } else {
+                    if (!hasGotName && !sSingleLine.contains("@") && !sSingleLine.contains(",") && !sSingleLine.contains(".com")) {
+                        name = sSingleLine.replace(".", "");
+                        //sb.append(name);
+                        hmCardInfo.put("name", name);
+                        hasGotName = true;
+                    } else {
+                        identifyMultipleNumbersWithEmail(sSingleLine);
+                    }
+                }
+        }
+
+        /*firstLine = lines[0];
 
         if (lines.length > 1)
             secondLine = lines[1];
         if (lines.length > 2)
             thirdLine = lines[2];
-        if(lines.length > 3)
+        if (lines.length > 3)
             fourthLine = lines[3];
-        if(lines.length > 4)
+        if (lines.length > 4)
             fifthLine = lines[4];
 
         if (!hasGotEmailID && firstLine.contains("@")) {
@@ -291,7 +307,7 @@ public class CameraFragment extends Fragment {
                 hasGotName = true;
             } else {
                 identifyMultipleNumbersWithEmail(firstLine);
-                /*String s1 = firstLine.replaceAll("[^0-9]", "");
+                *//*String s1 = firstLine.replaceAll("[^0-9]", "");
                 if (!hasGotNumber && s1.length() >= 10) {
                     if (s1.length() == 12) {
                         s1 = "+" + s1;
@@ -300,7 +316,7 @@ public class CameraFragment extends Fragment {
                     }
                     hmCardInfo.put("number", s1);
                     //hasGotNumber = true;
-                }*/
+                }*//*
             }
         }
         if (secondLine != null)
@@ -322,7 +338,7 @@ public class CameraFragment extends Fragment {
                     hasGotName = true;
                 } else {
                     identifyMultipleNumbersWithEmail(secondLine);
-                    /*String s1 = secondLine.replaceAll("[^0-9]", "");
+                    *//*String s1 = secondLine.replaceAll("[^0-9]", "");
                     if (!hasGotNumber && s1.length() >= 10) {
                         if (s1.length() == 12) {
                             s1 = "+" + s1;
@@ -331,7 +347,7 @@ public class CameraFragment extends Fragment {
                         }
                         hmCardInfo.put("number", s1);
                         //hasGotNumber = true;
-                    }*/
+                    }*//*
                 }
             }
         if (thirdLine != null)
@@ -353,7 +369,7 @@ public class CameraFragment extends Fragment {
                     hasGotName = true;
                 } else {
                     identifyMultipleNumbersWithEmail(thirdLine);
-                    /*String s1 = thirdLine.replaceAll("[^0-9]", "");
+                    *//*String s1 = thirdLine.replaceAll("[^0-9]", "");
                     if (!hasGotNumber && s1.length() >= 10) {
                         if (s1.length() == 12) {
                             s1 = "+" + s1;
@@ -362,7 +378,7 @@ public class CameraFragment extends Fragment {
                         }
                         hmCardInfo.put("number", s1);
                         //hasGotNumber = true;
-                    }*/
+                    }*//*
                 }
             }
         if (fourthLine != null)
@@ -407,7 +423,7 @@ public class CameraFragment extends Fragment {
                 } else {
                     identifyMultipleNumbersWithEmail(fifthLine);
                 }
-            }
+            }*/
     }
 
     private void identifyMultipleNumbersWithEmail(String str) {
@@ -428,20 +444,54 @@ public class CameraFragment extends Fragment {
                     hasGotEmailID = true;
                 }
                 String s1 = sEmailCheck.replaceAll("[^0-9]", "").trim();
-                if (s1.length() >= 10) {
+                /*if (s1.length() >= 10) {
                     if (hmCardInfo.containsKey("number")) {
                         sb.append(hmCardInfo.get("number")).append(",");
                         sb.append(s1);
                         hmCardInfo.put("number", sb.toString());
-                    } else if(s1.length() == 12){
+                    }else if (s1.length() == 12) {
                         s1 = "+" + s1;
                         hmCardInfo.put("number", s1);
-                    } else if(s1.length() == 10){
+                    } else if (s1.length() == 10) {
+                        hmCardInfo.put("number", s1);
+                    }
+                } */
+
+                /*if (s1.length() == 12) {
+                    s1 = "+" + s1;
+                    if (hmCardInfo.containsKey("number")) {
+                        sb = new StringBuilder();
+                        sb.append(hmCardInfo.get("number")).append(",");
+                        sb.append(s1);
+                        hmCardInfo.put("number", sb.toString());
+                    } else {
+                        hmCardInfo.put("number", s1);
+                    }
+                } else if (s1.length() >= 10 && s1.length() < 12) {
+                    sb = new StringBuilder();
+                    if (hmCardInfo.containsKey("number")) {
+                        sb.append(hmCardInfo.get("number")).append(",");
+                        sb.append(s1);
+                        hmCardInfo.put("number", sb.toString());
+                    } else {
+                        hmCardInfo.put("number", s1);
+                    }
+                }*/
+                if (s1.length()>9 && s1.length() <13) {
+                    if(s1.length()== 12) {
+                        s1 = "+" + s1;
+                    }
+                    if (hmCardInfo.containsKey("number")) {
+                        sb = new StringBuilder();
+                        sb.append(hmCardInfo.get("number")).append(",");
+                        sb.append(s1);
+                        hmCardInfo.put("number", sb.toString());
+                    } else {
                         hmCardInfo.put("number", s1);
                     }
                 }
             }
-        } else if(sResultByComma.length == 1){
+        } else if (sResultByComma.length == 1) {
             String sEmailCheck = sResultByComma[0];
             if (sEmailCheck.contains("@")) {
                 String sFinalEmail = sEmailCheck.replaceAll("[-+^:,]", "").trim();
@@ -449,18 +499,62 @@ public class CameraFragment extends Fragment {
                 hasGotEmailID = true;
             }
             String s1 = sEmailCheck.replaceAll("[^0-9]", "").trim();
-            if (s1.length() >= 10) {
+            /*if (s1.length() >= 10) {
                 if (hmCardInfo.containsKey("number")) {
                     sb.append(hmCardInfo.get("number")).append(",");
                     sb.append(s1);
                     hmCardInfo.put("number", sb.toString());
-                } else if(s1.length() == 12){
+                } else if (s1.length() == 12) {
                     s1 = "+" + s1;
                     hmCardInfo.put("number", s1);
-                } else if(s1.length() == 10){
+                } else if (s1.length() == 10) {
                     hmCardInfo.put("number", s1);
                 }
-            }
+            }*/
+            /*if (s1.length() == 12) {
+                s1 = "+" + s1;
+                if (hmCardInfo.containsKey("number")) {
+                    sb = new StringBuilder();
+                    sb.append(hmCardInfo.get("number")).append(",");
+                    sb.append(s1);
+                    hmCardInfo.put("number", sb.toString());
+                } else {
+                    hmCardInfo.put("number", s1);
+                }
+            } else if (s1.length() >= 10 && s1.length() < 12) {
+                if (hmCardInfo.containsKey("number")) {
+                    sb = new StringBuilder();
+                    sb.append(hmCardInfo.get("number")).append(",");
+                    sb.append(s1);
+                    hmCardInfo.put("number", sb.toString());
+                } else {
+                    hmCardInfo.put("number", s1);
+                }
+            }*/
+
+
+            if (s1.length()>9 && s1.length() <13) {
+                if(s1.length()== 12) {
+                    s1 = "+" + s1;
+                }
+                if (hmCardInfo.containsKey("number")) {
+                    sb = new StringBuilder();
+                    sb.append(hmCardInfo.get("number")).append(",");
+                    sb.append(s1);
+                    hmCardInfo.put("number", sb.toString());
+                } else {
+                    hmCardInfo.put("number", s1);
+                }
+            } /*else if (s1.length() >= 10 && s1.length() < 12) {
+                if (hmCardInfo.containsKey("number")) {
+                    sb = new StringBuilder();
+                    sb.append(hmCardInfo.get("number")).append(",");
+                    sb.append(s1);
+                    hmCardInfo.put("number", sb.toString());
+                } else {
+                    hmCardInfo.put("number", s1);
+                }
+            }*/
         }
 
     }
@@ -524,6 +618,21 @@ public class CameraFragment extends Fragment {
             }
         }
     }*/
+
+    void loadDisplayFragment() {
+        Fragment newFragment;
+        FragmentTransaction transaction;
+        newFragment = DisplayCardFragment.newInstance("", "");
+
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("hashmap", hmCardInfo);
+        newFragment.setArguments(bundle);
+
+        transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fl_container, newFragment, null);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
 
     public static String extractNumber(final String str) {
 

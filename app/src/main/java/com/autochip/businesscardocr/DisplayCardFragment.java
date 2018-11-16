@@ -1,12 +1,21 @@
 package com.autochip.businesscardocr;
 
 import android.content.Context;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import app_utility.OnFragmentInteractionListener;
 
@@ -29,7 +38,14 @@ public class DisplayCardFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    private OnFragmentInteractionListener mListener;
+    public static OnFragmentInteractionListener mListener;
+
+    EditText[] etNumbers;
+    LinearLayout llDynamicNumber;
+    ArrayList<String> alNumber = new ArrayList<>();
+    public TextInputLayout etName, etEmail;
+    String sName, sEmail;
+    private HashMap<String, String> mMap;
 
     public DisplayCardFragment() {
         // Required empty public constructor
@@ -56,17 +72,59 @@ public class DisplayCardFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
+        //mListener = this;
+        /*if (getArguments() != null) {
+            mMap = new HashMap<>();
+            Bundle b = this.getArguments();
+            if (b.getSerializable("hashmap") != null) {
+                //noinspection unchecked
+                mMap = (HashMap<String, String>) b.getSerializable("hashmap");
+                if (mMap.get("number") != null) {
+                    //String[] saNumbers = mMap.get("number").split(",");
+                    sName = mMap.get("name");
+                    sEmail = mMap.get("email");
+                    HashSet<String> hsTmp = new HashSet<>(Arrays.asList(mMap.get("number").split(",")));
+                    alNumber.addAll(hsTmp);
+                }
+            }
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        }*/
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_display_card, container, false);
+        View view = inflater.inflate(R.layout.fragment_display_card, container, false);
+        llDynamicNumber = view.findViewById(R.id.ll_dynamic_number);
+        etName = view.findViewById(R.id.et_name);
+        etEmail = view.findViewById(R.id.et_email);
+
+        if (getArguments() != null) {
+            mMap = new HashMap<>();
+            Bundle b = this.getArguments();
+            if (b.getSerializable("hashmap") != null) {
+                //noinspection unchecked
+                mMap = (HashMap<String, String>) b.getSerializable("hashmap");
+                if (mMap.get("number") != null) {
+                    //String[] saNumbers = mMap.get("number").split(",");
+                    sName = mMap.get("name");
+                    sEmail = mMap.get("email");
+                    HashSet<String> hsTmp = new HashSet<>(Arrays.asList(mMap.get("number").split(",")));
+                    alNumber.addAll(hsTmp);
+                }
+            }
+        }
+
+        etName.getEditText().setText(sName);
+        etEmail.getEditText().setText(sEmail);
+        etNumbers = new EditText[alNumber.size()];
+
+        for (int i = 0; i < etNumbers.length; i++) {
+            addDynamicContents(i);
+        }
+        return view;
     }
 
     @Override
@@ -84,6 +142,19 @@ public class DisplayCardFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    void addDynamicContents(int pos) {
+        EditText etDynamicText = new EditText(getActivity());
+
+        if (Build.VERSION.SDK_INT < 23) {
+            //noinspection deprecation
+            etDynamicText.setTextAppearance(getActivity(), R.style.TextAppearance_AppCompat_Medium);
+        } else {
+            etDynamicText.setTextAppearance(R.style.TextAppearance_AppCompat_Medium);
+        }
+        etDynamicText.setText(alNumber.get(pos));
+        llDynamicNumber.addView(etDynamicText);
     }
 
 }

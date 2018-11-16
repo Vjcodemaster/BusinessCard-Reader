@@ -35,7 +35,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,6 +88,8 @@ public class CameraFragment extends Fragment {
     boolean hasGotEmailID = false;
     boolean hasGotName = false;
     boolean hasGotNumber = false;
+
+    HashSet<String> hsNumbers;
 
     public CameraFragment() {
         // Required empty public constructor
@@ -251,6 +255,8 @@ public class CameraFragment extends Fragment {
         String firstLine;
         String secondLine = null;
         String thirdLine = null;
+        String fourthLine = null;
+        String fifthLine = null;
         String[] lines = text.split(Objects.requireNonNull(System.getProperty("line.separator")));
         String[] matches = new String[]{"Email:", "Email", "email", "E-mail", "e-mail", "-mail"};
         firstLine = lines[0];
@@ -259,6 +265,10 @@ public class CameraFragment extends Fragment {
             secondLine = lines[1];
         if (lines.length > 2)
             thirdLine = lines[2];
+        if(lines.length > 3)
+            fourthLine = lines[3];
+        if(lines.length > 4)
+            fifthLine = lines[4];
 
         if (!hasGotEmailID && firstLine.contains("@")) {
             //String regex_script = "\\Email:\\Email\\email\\E-mail\\e-mail";
@@ -280,13 +290,17 @@ public class CameraFragment extends Fragment {
                 hmCardInfo.put("name", name);
                 hasGotName = true;
             } else {
-                String s1 = firstLine.replaceAll("[^0-9]", "");
+                identifyMultipleNumbersWithEmail(firstLine);
+                /*String s1 = firstLine.replaceAll("[^0-9]", "");
                 if (!hasGotNumber && s1.length() >= 10) {
-                    if (s1.length() != 10)
+                    if (s1.length() == 12) {
                         s1 = "+" + s1;
+                    } else if (s1.length() > 12) {
+                        identifyMultipleNumbersWithEmail(firstLine);
+                    }
                     hmCardInfo.put("number", s1);
-                    hasGotNumber = true;
-                }
+                    //hasGotNumber = true;
+                }*/
             }
         }
         if (secondLine != null)
@@ -307,13 +321,17 @@ public class CameraFragment extends Fragment {
                     hmCardInfo.put("name", name);
                     hasGotName = true;
                 } else {
-                    String s1 = secondLine.replaceAll("[^0-9]", "");
+                    identifyMultipleNumbersWithEmail(secondLine);
+                    /*String s1 = secondLine.replaceAll("[^0-9]", "");
                     if (!hasGotNumber && s1.length() >= 10) {
-                        if (s1.length() != 10)
+                        if (s1.length() == 12) {
                             s1 = "+" + s1;
+                        } else if (s1.length() > 12) {
+                            identifyMultipleNumbersWithEmail(secondLine);
+                        }
                         hmCardInfo.put("number", s1);
-                        hasGotNumber = true;
-                    }
+                        //hasGotNumber = true;
+                    }*/
                 }
             }
         if (thirdLine != null)
@@ -334,15 +352,117 @@ public class CameraFragment extends Fragment {
                     hmCardInfo.put("name", name);
                     hasGotName = true;
                 } else {
-                    String s1 = thirdLine.replaceAll("[^0-9]", "");
+                    identifyMultipleNumbersWithEmail(thirdLine);
+                    /*String s1 = thirdLine.replaceAll("[^0-9]", "");
                     if (!hasGotNumber && s1.length() >= 10) {
-                        if (s1.length() != 10)
+                        if (s1.length() == 12) {
                             s1 = "+" + s1;
+                        } else if (s1.length() > 12) {
+                            identifyMultipleNumbersWithEmail(thirdLine);
+                        }
                         hmCardInfo.put("number", s1);
-                        hasGotNumber = true;
+                        //hasGotNumber = true;
+                    }*/
+                }
+            }
+        if (fourthLine != null)
+            if (!hasGotEmailID && fourthLine.contains("@")) {
+                for (String s : matches) {
+                    if (fourthLine.contains(s)) {
+                        email = fourthLine.replace(s, "");
+                        fourthLine = email.replaceAll("[-+^:,]", "").trim();
+                        break;
+                    }
+                }
+                hmCardInfo.put("email", fourthLine);
+                hasGotEmailID = true;
+            } else {
+                if (!hasGotName && !fourthLine.contains("@") && !fourthLine.contains(",") && !fourthLine.contains(".com")) {
+                    name = fourthLine.replace(".", "");
+                    //sb.append(" ").append(name);
+                    hmCardInfo.put("name", name);
+                    hasGotName = true;
+                } else {
+                    identifyMultipleNumbersWithEmail(fourthLine);
+                }
+            }
+
+        if (fifthLine != null)
+            if (!hasGotEmailID && fifthLine.contains("@")) {
+                for (String s : matches) {
+                    if (fifthLine.contains(s)) {
+                        email = fifthLine.replace(s, "");
+                        fifthLine = email.replaceAll("[-+^:,]", "").trim();
+                        break;
+                    }
+                }
+                hmCardInfo.put("email", fifthLine);
+                hasGotEmailID = true;
+            } else {
+                if (!hasGotName && !fifthLine.contains("@") && !fifthLine.contains(",") && !fifthLine.contains(".com")) {
+                    name = fifthLine.replace(".", "");
+                    //sb.append(" ").append(name);
+                    hmCardInfo.put("name", name);
+                    hasGotName = true;
+                } else {
+                    identifyMultipleNumbersWithEmail(fifthLine);
+                }
+            }
+    }
+
+    private void identifyMultipleNumbersWithEmail(String str) {
+        String sResultByComma[];
+        //String sResultBySpace[];
+        sResultByComma = str.split(",");
+        //sResultBySpace = str.split(" ");
+        StringBuilder sb = new StringBuilder();
+
+        if (sResultByComma.length > 1) {
+            hsNumbers = new HashSet<>(Arrays.asList(sResultByComma));
+            ArrayList<String> alEmailCheck = new ArrayList<>(hsNumbers);
+            for (int i = 0; i < alEmailCheck.size(); i++) {
+                String sEmailCheck = alEmailCheck.get(i);
+                if (sEmailCheck.contains("@")) {
+                    String sFinalEmail = sEmailCheck.replaceAll("[-+^:,]", "").trim();
+                    hmCardInfo.put("email", sFinalEmail);
+                    hasGotEmailID = true;
+                }
+                String s1 = sEmailCheck.replaceAll("[^0-9]", "").trim();
+                if (s1.length() >= 10) {
+                    if (hmCardInfo.containsKey("number")) {
+                        sb.append(hmCardInfo.get("number")).append(",");
+                        sb.append(s1);
+                        hmCardInfo.put("number", sb.toString());
+                    } else if(s1.length() == 12){
+                        s1 = "+" + s1;
+                        hmCardInfo.put("number", s1);
+                    } else if(s1.length() == 10){
+                        hmCardInfo.put("number", s1);
                     }
                 }
             }
+        } else if(sResultByComma.length == 1){
+            String sEmailCheck = sResultByComma[0];
+            if (sEmailCheck.contains("@")) {
+                String sFinalEmail = sEmailCheck.replaceAll("[-+^:,]", "").trim();
+                hmCardInfo.put("email", sFinalEmail);
+                hasGotEmailID = true;
+            }
+            String s1 = sEmailCheck.replaceAll("[^0-9]", "").trim();
+            if (s1.length() >= 10) {
+                if (hmCardInfo.containsKey("number")) {
+                    sb.append(hmCardInfo.get("number")).append(",");
+                    sb.append(s1);
+                    hmCardInfo.put("number", sb.toString());
+                } else if(s1.length() == 12){
+                    s1 = "+" + s1;
+                    hmCardInfo.put("number", s1);
+                } else if(s1.length() == 10){
+                    hmCardInfo.put("number", s1);
+                }
+            }
+        }
+
     }
 
     /*void extractInfo(String text){

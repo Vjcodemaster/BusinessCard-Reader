@@ -45,14 +45,14 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     }
 
     @Override
-    public void onStart(){
+    public void onStart() {
         super.onStart();
         if (!hasPermissions(MainActivity.this, CAMERA_PERMISSION)) {
             ActivityCompat.requestPermissions(MainActivity.this, CAMERA_PERMISSION, CAMERA_CODE);
         }
     }
 
-    void initViews(){
+    void initViews() {
         btnScan = findViewById(R.id.btn_scan);
         tvName = findViewById(R.id.tv_name);
         tvPhoneNo = findViewById(R.id.tv_phone);
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     @Override
     public void onRequestPermissionsResult(int PERMISSION_ALL, String permissions[], int[] grantResults) {
         StringBuilder sMSG = new StringBuilder();
-        if(PERMISSION_ALL==CAMERA_CODE) {
+        if (PERMISSION_ALL == CAMERA_CODE) {
             for (String sPermission : permissions) {
                 switch (sPermission) {
                     case Manifest.permission.CAMERA:
@@ -111,13 +111,19 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     @Override
     public void onFragmentMessage(String TAG, Bitmap bCardImage, HashMap<String, String> hsCardInfo) {
-        switch (TAG){
+        switch (TAG) {
             case "DATA_RECEIVED":
                 btnScan.setVisibility(View.VISIBLE);
                 llDisplay.setVisibility(View.VISIBLE);
                 tvName.setText(hsCardInfo.get("name"));
                 tvEmail.setText(hsCardInfo.get("email"));
-                tvPhoneNo.setText(hsCardInfo.get("number"));
+
+                String sNumbers = hsCardInfo.get("number");
+                String[] saNumbers;
+                if (sNumbers!=null && sNumbers.length()>=9) {
+                    saNumbers = sNumbers.split(",");
+                    tvPhoneNo.setText(saNumbers[0]);
+                }
                 break;
         }
     }

@@ -14,7 +14,7 @@
         <app_utility.CameraSourcePreview
             android:id="@+id/preview"
             android:layout_width="match_parent"
-            android:layout_height="400dp">
+            android:layout_height="wrap_content">
 
             <app_utility.GraphicOverlay
                 android:id="@+id/graphicOverlay"

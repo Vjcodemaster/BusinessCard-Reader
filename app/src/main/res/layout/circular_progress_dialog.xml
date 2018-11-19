@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <android.support.v7.widget.CardView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/card_view_progress_dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="3dp"
+        android:layout_gravity="center"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="5dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ProgressBar
+                android:id="@+id/login_progress"
+                style="?android:attr/progressBarStyleInverse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/layout_margin_progressbar"
+                android:layout_marginEnd="@dimen/layout_margin_progressbar"
+                android:layout_marginStart="@dimen/layout_margin_progressbar"
+                android:layout_marginTop="@dimen/layout_margin_progressbar"
+                android:visibility="visible"/>
+
+            <TextView
+                android:id="@+id/tv_please_wait"
+                style="?android:textAppearanceSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingEnd="@dimen/layout_margin_progressbar"
+                android:paddingStart="@dimen/layout_margin_progressbar"
+                android:text="@string/please_wait"
+                android:textColor="@color/colorAccent"/>
+
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
+</FrameLayout>

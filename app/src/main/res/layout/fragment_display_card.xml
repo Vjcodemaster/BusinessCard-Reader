@@ -18,8 +18,9 @@
             android:id="@+id/iv_business_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/camera_red" />
+            android:scaleType="centerCrop"
+            android:padding="10dp"
+            android:contentDescription="@string/app_name" />
     </android.support.v7.widget.CardView>
 
     <ScrollView
@@ -193,6 +194,18 @@
                 </LinearLayout>
 
             </android.support.v7.widget.CardView>
+
+            <Button
+                android:id="@+id/btn_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/colorAccent"
+                android:layout_gravity="center"
+                android:textAllCaps="false"
+                android:text="Save"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:foreground="?android:attr/selectableItemBackground"/>
         </LinearLayout>
     </ScrollView>
 

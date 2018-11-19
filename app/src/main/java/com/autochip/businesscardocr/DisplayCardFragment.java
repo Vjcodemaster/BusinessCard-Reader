@@ -11,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,8 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 
+import app_utility.OnAsyncTaskInterface;
 import app_utility.OnFragmentInteractionListener;
+import app_utility.ScannerAsyncTask;
 
 
 /**
@@ -31,7 +35,7 @@ import app_utility.OnFragmentInteractionListener;
  * Use the {@link DisplayCardFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class DisplayCardFragment extends Fragment {
+public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterface {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -43,6 +47,8 @@ public class DisplayCardFragment extends Fragment {
 
     public static OnFragmentInteractionListener mListener;
 
+    public static OnAsyncTaskInterface mAsyncInterface;
+
     EditText[] etNumbers;
     LinearLayout llDynamicNumber;
     ArrayList<String> alNumber = new ArrayList<>();
@@ -50,6 +56,7 @@ public class DisplayCardFragment extends Fragment {
     private ImageView ivBusinessCard;
     String sName, sEmail, sWebsite;
     String sImagePath;
+    Button btnSave;
     private HashMap<String, String> mMap;
 
     public DisplayCardFragment() {
@@ -77,6 +84,7 @@ public class DisplayCardFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mAsyncInterface = this;
         //mListener = this;
         /*if (getArguments() != null) {
             mMap = new HashMap<>();
@@ -107,6 +115,7 @@ public class DisplayCardFragment extends Fragment {
         etEmail = view.findViewById(R.id.et_email);
         etWebsite = view.findViewById(R.id.et_website);
         ivBusinessCard = view.findViewById(R.id.iv_business_card);
+        btnSave = view.findViewById(R.id.btn_save);
 
         if (getArguments() != null) {
             mMap = new HashMap<>();
@@ -131,11 +140,21 @@ public class DisplayCardFragment extends Fragment {
         etWebsite.getEditText().setText(sWebsite);
         etNumbers = new EditText[alNumber.size()];
         Bitmap bmImg = BitmapFactory.decodeFile(sImagePath);
+        //Glide.with(getActivity()).load(bmImg).centerCrop().placeholder(R.drawable.camera_red).into(ivBusinessCard);
         ivBusinessCard.setImageBitmap(bmImg);
 
         for (int i = 0; i < etNumbers.length; i++) {
             addDynamicContents(i);
         }
+
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                ScannerAsyncTask scannerAsyncTask = new ScannerAsyncTask(getActivity(), mMap);
+                scannerAsyncTask.execute(String.valueOf(2), "");
+            }
+        });
         return view;
     }
 
@@ -169,4 +188,17 @@ public class DisplayCardFragment extends Fragment {
         llDynamicNumber.addView(etDynamicText);
     }
 
+    @Override
+    public void onAsyncTaskComplete(String sCase, int nFlag) {
+        switch (nFlag){
+            case 2:
+                getActivity().onBackPressed();
+                break;
+        }
+    }
+
+    @Override
+    public void onAsyncTaskComplete(String sCase, int nFlag, LinkedHashMap<String, ArrayList<String>> lhmData, ArrayList<Integer> alImagePosition) {
+
+    }
 }

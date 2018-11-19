@@ -1,6 +1,8 @@
 package com.autochip.businesscardocr;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -10,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
@@ -43,8 +46,10 @@ public class DisplayCardFragment extends Fragment {
     EditText[] etNumbers;
     LinearLayout llDynamicNumber;
     ArrayList<String> alNumber = new ArrayList<>();
-    public TextInputLayout etName, etEmail;
-    String sName, sEmail;
+    public TextInputLayout etName, etEmail, etWebsite;
+    private ImageView ivBusinessCard;
+    String sName, sEmail, sWebsite;
+    String sImagePath;
     private HashMap<String, String> mMap;
 
     public DisplayCardFragment() {
@@ -100,6 +105,8 @@ public class DisplayCardFragment extends Fragment {
         llDynamicNumber = view.findViewById(R.id.ll_dynamic_number);
         etName = view.findViewById(R.id.et_name);
         etEmail = view.findViewById(R.id.et_email);
+        etWebsite = view.findViewById(R.id.et_website);
+        ivBusinessCard = view.findViewById(R.id.iv_business_card);
 
         if (getArguments() != null) {
             mMap = new HashMap<>();
@@ -111,6 +118,8 @@ public class DisplayCardFragment extends Fragment {
                     //String[] saNumbers = mMap.get("number").split(",");
                     sName = mMap.get("name");
                     sEmail = mMap.get("email");
+                    sWebsite = mMap.get("website");
+                    sImagePath = mMap.get("image_url");
                     HashSet<String> hsTmp = new HashSet<>(Arrays.asList(mMap.get("number").split(",")));
                     alNumber.addAll(hsTmp);
                 }
@@ -119,7 +128,10 @@ public class DisplayCardFragment extends Fragment {
 
         etName.getEditText().setText(sName);
         etEmail.getEditText().setText(sEmail);
+        etWebsite.getEditText().setText(sWebsite);
         etNumbers = new EditText[alNumber.size()];
+        Bitmap bmImg = BitmapFactory.decodeFile(sImagePath);
+        ivBusinessCard.setImageBitmap(bmImg);
 
         for (int i = 0; i < etNumbers.length; i++) {
             addDynamicContents(i);

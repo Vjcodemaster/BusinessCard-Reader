@@ -81,8 +81,10 @@ public class CameraFragment extends Fragment {
     private ImageButton ibCapture;
     TextRecognizer textRecognizer;
     HashMap<String, String> hmCardInfo = new HashMap<>();
+    String[] websiteMatches = new String[]{"ww.","vw.","www."};
 
     boolean hasGotEmailID = false;
+    boolean hasGotWebsite = false;
     boolean hasGotName = false;
     //boolean hasGotNumber = false;
 
@@ -215,6 +217,7 @@ public class CameraFragment extends Fragment {
                             values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
                             values.put(MediaStore.MediaColumns.DATA,
                                     imageFile.getAbsolutePath());
+                            hmCardInfo.put("image_url", imageFile.getAbsolutePath());
 
                             getActivity().getContentResolver().insert(
                                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
@@ -248,11 +251,18 @@ public class CameraFragment extends Fragment {
         String[] lines = text.split(Objects.requireNonNull(System.getProperty("line.separator")));
         String[] matches = new String[]{"Email:", "Email", "email", "E-mail", "e-mail", "-mail"};
 
+
         ArrayList<String> alText = new ArrayList<>(Arrays.asList(lines));
 
         for (int i = 0; i < alText.size(); i++) {
             String sSingleLine = alText.get(i);
+
             if (sSingleLine != null)
+                if (!hasGotWebsite && stringContainsItemFromList(sSingleLine, websiteMatches)){
+                    Toast.makeText(getActivity(), "yes website found", Toast.LENGTH_SHORT).show();
+                    hmCardInfo.put("website", sSingleLine);
+                    hasGotWebsite = true;
+                } else
                 if (!hasGotEmailID && sSingleLine.contains("@")) {
                     for (String s : matches) {
                         if (sSingleLine.contains(s)) {
@@ -426,18 +436,34 @@ public class CameraFragment extends Fragment {
             }*/
     }
 
+    public static boolean stringContainsItemFromList(String inputStr, String[] items)
+    {
+        for (String item : items) {
+            if (inputStr.contains(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     private void identifyMultipleNumbersWithEmail(String str) {
         String sResultByComma[];
         //String sResultBySpace[];
         sResultByComma = str.split(",");
         //sResultBySpace = str.split(" ");
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb;
 
         if (sResultByComma.length > 1) {
             hsNumbers = new HashSet<>(Arrays.asList(sResultByComma));
             ArrayList<String> alEmailCheck = new ArrayList<>(hsNumbers);
             for (int i = 0; i < alEmailCheck.size(); i++) {
                 String sEmailCheck = alEmailCheck.get(i);
+                if (!hasGotWebsite && stringContainsItemFromList(sEmailCheck, websiteMatches)){
+                    Toast.makeText(getActivity(), "yes website found", Toast.LENGTH_SHORT).show();
+                    hmCardInfo.put("website", sEmailCheck);
+                    hasGotWebsite = true;
+                } else
                 if (sEmailCheck.contains("@")) {
                     String sFinalEmail = sEmailCheck.replaceAll("[-+^:,]", "").trim();
                     hmCardInfo.put("email", sFinalEmail);

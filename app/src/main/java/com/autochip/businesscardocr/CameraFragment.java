@@ -7,22 +7,16 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.RectF;
 import android.hardware.Camera;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,19 +36,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 
 import app_utility.CameraSource;
 import app_utility.CameraSourcePreview;
+import app_utility.CircularProgressBar;
 import app_utility.GraphicOverlay;
+import app_utility.OcrDetectorProcessor;
 import app_utility.OcrGraphic;
 import app_utility.OnFragmentInteractionListener;
-
-import static com.autochip.businesscardocr.MainActivity.onFragmentInteractionListener;
 
 
 /**
@@ -65,7 +57,7 @@ import static com.autochip.businesscardocr.MainActivity.onFragmentInteractionLis
  * Use the {@link CameraFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class CameraFragment extends Fragment {
+public class CameraFragment extends Fragment implements OnFragmentInteractionListener{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -77,7 +69,7 @@ public class CameraFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    private OnFragmentInteractionListener mListener;
+    public static OnFragmentInteractionListener mListener;
 
     // Set good defaults for capturing text.
     boolean autoFocus = true;
@@ -97,6 +89,10 @@ public class CameraFragment extends Fragment {
     //boolean hasGotNumber = false;
 
     HashSet<String> hsNumbers;
+
+    private File imageFile;
+
+    private CircularProgressBar circularProgressBar;
 
     public CameraFragment() {
         // Required empty public constructor
@@ -123,6 +119,7 @@ public class CameraFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mListener = this;
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
@@ -150,7 +147,6 @@ public class CameraFragment extends Fragment {
             public void onClick(View view) {
                 Toast.makeText(getActivity(), "Clicked", Toast.LENGTH_SHORT).show();
                 cameraSource.takePicture(null, new CameraSource.PictureCallback() {
-                    private File imageFile;
                     private int rotation = 0;
 
                     @Override
@@ -787,7 +783,7 @@ public class CameraFragment extends Fragment {
         // graphics for each text block on screen.  The factory is used by the multi-processor to
         // create a separate tracker instance for each text block.
         textRecognizer = new TextRecognizer.Builder(context).build();
-        //textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
+        textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
 
         if (!textRecognizer.isOperational()) {
             // Note: The first time that an app using a Vision API is installed on a
@@ -822,7 +818,6 @@ public class CameraFragment extends Fragment {
                         .setFlashMode(useFlash ? Camera.Parameters.FLASH_MODE_TORCH : null)
                         .setFocusMode(autoFocus ? Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO : null)
                         .build();
-
     }
 
     private Bitmap resize(Bitmap image, int maxWidth, int maxHeight) {
@@ -872,64 +867,130 @@ public class CameraFragment extends Fragment {
         }
     }
 
-    @SuppressLint("StaticFieldLeak")
-    private class CropImage extends AsyncTask<String, String, String> {
-
-        Bitmap bitmap;
-        CropImage(Bitmap bitmap){
-            this.bitmap = bitmap;
+    @Override
+    public void onFragmentMessage(String TAG, Bitmap bCardImage, HashMap<String, String> hmCardInfo) {
+        switch (TAG){
+            case "IMAGE_PROCESS_COMPLETE":
+                //setProgressBar();
+                this.hmCardInfo = hmCardInfo;
+                takePicture();
+                /*hmCardInfo.put("image_url", imageFile.getAbsolutePath());
+                cameraSource.stop();
+                cameraSource.release();
+                preview.stop();
+                preview.release();
+                loadDisplayFragment();*/
+                break;
         }
+    }
 
-        @Override
-        protected String doInBackground(String... params) {
-            long startnow;
-            long endnow;
+    void takePicture(){
+        cameraSource.takePicture(null, new CameraSource.PictureCallback() {
+            private int rotation = 0;
 
-            startnow = android.os.SystemClock.uptimeMillis();
+            @Override
+            public void onPictureTaken(byte[] bytes) {
+                try {
+                    // convert byte array into bitmap
+                    Bitmap loadedImage;
+                    Bitmap rotatedBitmap;
+                    loadedImage = BitmapFactory.decodeByteArray(bytes, 0,
+                            bytes.length);
 
-            endnow = android.os.SystemClock.uptimeMillis();
-            Log.e("END", "TimeForContacts " + (endnow - startnow) + " ms");
+                    // rotate Image
+                    Matrix rotateMatrix = new Matrix();
+                    rotateMatrix.postRotate(rotation);
+                    rotatedBitmap = Bitmap.createBitmap(loadedImage, 0, 0,
+                            loadedImage.getWidth(), loadedImage.getHeight(),
+                            rotateMatrix, false);
+                    String state = Environment.getExternalStorageState();
+                    File folder;
+                    if (state.contains(Environment.MEDIA_MOUNTED)) {
+                        folder = new File(Environment
+                                .getExternalStorageDirectory() + "/Demo");
+                    } else {
+                        folder = new File(Environment
+                                .getExternalStorageDirectory() + "/Demo");
+                    }
 
-            //Log.e("size of contacts: ", "" + alContact.size());
-            return null;
-        }
+                    boolean success = true;
+                    if (!folder.exists()) {
+                        success = folder.mkdirs();
+                    }
+                    if (success) {
+                        java.util.Date date = new java.util.Date();
+                        imageFile = new File(folder.getAbsolutePath()
+                                + File.separator
+                                //+ new Timestamp(date.getTime()).toString()
+                                + "Image.jpg");
 
-        @Override
-        protected void onPostExecute(String result) {
+                        imageFile.createNewFile();
+                    } else {
+                        Toast.makeText(getActivity(), "Image Not saved",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-        }
+                    // save image into gallery
+                    rotatedBitmap = resize(rotatedBitmap, 800, 600);
+                    /*Frame imageFrame = new Frame.Builder()
+                            .setBitmap(rotatedBitmap)
+                            .build();
 
-        public Bitmap scaleCenterCrop(Bitmap source, int newHeight, int newWidth) {
-            int sourceWidth = source.getWidth();
-            int sourceHeight = source.getHeight();
+                    SparseArray<TextBlock> textBlocks = textRecognizer.detect(imageFrame);
 
-            // Compute the scaling factors to fit the new height and width, respectively.
-            // To cover the final image, the final scaling will be the bigger
-            // of these two.
-            float xScale = (float) newWidth / sourceWidth;
-            float yScale = (float) newHeight / sourceHeight;
-            float scale = Math.max(xScale, yScale);
 
-            // Now get the size of the source bitmap when scaled
-            float scaledWidth = scale * sourceWidth;
-            float scaledHeight = scale * sourceHeight;
+                    for (int i = 0; i < textBlocks.size(); i++) {
 
-            // Let's find out the upper left coordinates if the scaled bitmap
-            // should be centered in the new size give by the parameters
-            float left = (newWidth - scaledWidth) / 2;
-            float top = (newHeight - scaledHeight) / 2;
+                        TextBlock textBlock = textBlocks.get(textBlocks.keyAt(i));
+                        String text = textBlock.getValue();
+                        extractInfo(text);
+                    }*/
+                    //new CropImage().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                    ByteArrayOutputStream baOutPutStream = new ByteArrayOutputStream();
+                    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baOutPutStream);
 
-            // The target rectangle for the new, scaled version of the source bitmap will now
-            // be
-            RectF targetRect = new RectF(left, top, left + scaledWidth, top + scaledHeight);
+                    FileOutputStream fileOutputStream = new FileOutputStream(imageFile);
+                    fileOutputStream.write(baOutPutStream.toByteArray());
+                    fileOutputStream.close();
+                    ContentValues values = new ContentValues();
 
-            // Finally, we create a new bitmap of the specified size and draw our new,
-            // scaled bitmap onto it.
-            Bitmap dest = Bitmap.createBitmap(newWidth, newHeight, source.getConfig());
-            Canvas canvas = new Canvas(dest);
-            canvas.drawBitmap(source, null, targetRect, null);
+                    values.put(MediaStore.Images.Media.DATE_TAKEN,
+                            System.currentTimeMillis());
+                    values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                    values.put(MediaStore.MediaColumns.DATA,
+                            imageFile.getAbsolutePath());
+                    hmCardInfo.put("image_url", imageFile.getAbsolutePath());
 
-            return dest;
-        }
+                    getActivity().getContentResolver().insert(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+                    getActivity().setResult(Activity.RESULT_OK); //add this
+                    cameraSource.stop();
+                    preview.stop();
+                    preview.release();
+                    //getActivity().getSupportFragmentManager().popBackStack();
+                    //onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED", rotatedBitmap, hmCardInfo);
+                    loadDisplayFragment();
+                    //finish();
+                } catch (Exception e) {
+                    /*if (circularProgressBar != null && circularProgressBar.isShowing()) {
+                        circularProgressBar.dismiss();
+                    }*/
+                    e.printStackTrace();
+                }
+
+                /*if (circularProgressBar != null && circularProgressBar.isShowing()) {
+                    circularProgressBar.dismiss();
+                }*/
+            }
+        });
+    }
+
+    private void setProgressBar() {
+        circularProgressBar = new CircularProgressBar(getActivity());
+        circularProgressBar.setCanceledOnTouchOutside(false);
+        circularProgressBar.setCancelable(false);
+        circularProgressBar.show();
     }
 }

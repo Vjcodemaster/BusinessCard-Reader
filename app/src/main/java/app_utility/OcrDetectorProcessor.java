@@ -55,7 +55,7 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
     public void receiveDetections(Detector.Detections<TextBlock> detections) {
         graphicOverlay.clear();
         SparseArray<TextBlock> items = detections.getDetectedItems();
-        if (items.size() >= 4) {
+        if (items.size() >= 5) {
             for (int i = 0; i < items.size(); ++i) {
                 TextBlock item = items.valueAt(i);
                 if (item != null && item.getValue() != null) {
@@ -64,21 +64,15 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                     OcrGraphic graphic = new OcrGraphic(graphicOverlay, item);
                     graphicOverlay.add(graphic);
                     //separateeAllInfo(item.getValue());
-                    separateData(item.getValue());
+                    if (item.getValue().length() >= 3)
+                        separateData(item.getValue());
                 }
             }
-        /*nCycles = nCycles + 1;
-        if (nCycles >= 2 && items.size() >= 4 && alCardInfoSeparated.size() >= 2) {
-            validateInfo();
-            CameraFragment.mListener.onFragmentMessage("IMAGE_PROCESS_COMPLETE", null, hmCardData);
-        }*/
-            /*if (alCardInfoSeparated.size() >= 3) {
-                //validateInfo();
-                CameraFragment.mListener.onFragmentMessage("IMAGE_PROCESS_COMPLETE", null, hmCardData);
-            }*/
             if (hmCardData.size() >= 3) {
                 //validateInfo();
                 CameraFragment.mListener.onFragmentMessage("IMAGE_PROCESS_COMPLETE", null, hmCardData);
+            } else {
+                hmCardData.clear();
             }
         }
     }
@@ -203,73 +197,14 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
         }
     }
 
-    /*private void separateAllInfo(String sText) {
-        String[] lines = sText.split(Objects.requireNonNull(System.getProperty("line.separator")));
-
-        if (lines.length > 1)
-            for (String s : lines) {
-                if (s.contains(",")) {
-                    String[] splitInfo = s.split(",");
-                    alCardInfoSeparated.addAll(Arrays.asList(splitInfo));
-                } else if (s.contains("/")) {
-                    String[] splitInfo = s.split("/");
-                    alCardInfoSeparated.addAll(Arrays.asList(splitInfo));
-                } else {
-                    alCardInfoSeparated.add(s);
-                }
-            }
-        else {
-            if (sText.length() >= 3)
-                if (sText.contains(",")) {
-                    String[] splitInfo = sText.split(",");
-                    alCardInfoSeparated.addAll(Arrays.asList(splitInfo));
-                } else if (sText.contains("/")) {
-                    String[] splitInfo = sText.split("/");
-                    alCardInfoSeparated.addAll(Arrays.asList(splitInfo));
-                } else {
-                    alCardInfoSeparated.add(sText);
-                }
-        }
-        //alCardInfoSeparated.addAll(Arrays.asList(lines));
-    }
-
-    private void validateInfo() {
-        StringBuilder sb;
-        for (int i = 0; i < alCardInfoSeparated.size(); i++) {
-            String sTmp = alCardInfoSeparated.get(i);
-            if (isAlpha(sTmp)) {
-                if (hmCardData.containsKey("name")) {
-                    hmCardData.put("company_name", sTmp);
-                } else
-                    hmCardData.put("name", sTmp);
-            } else if (sTmp.contains("@")) {
-                hmCardData.put("email", sTmp);
-            } else if (sTmp.contains("w.")) {
-                hmCardData.put("website", sTmp);
-            } else if (matchesLengthCondition(sTmp)) {
-                if (s1.length() == 12) {
-                    s1 = "+" + s1;
-                }
-                if (hmCardData.containsKey("number")) {
-                    sb = new StringBuilder();
-                    sb.append(hmCardData.get("number")).append(",");
-                    sb.append(s1);
-                    hmCardData.put("number", sb.toString());
-                } else {
-                    hmCardData.put("number", s1);
-                }
-            }
-        }
-    }*/
-
-    private boolean isAlphaLoop(String name) {
+    /*private boolean isAlphaLoop(String name) {
         for (String s : name.split(",")) {
             if (!s.matches("[ A-Za-z]+")) {
                 return false;
             }
         }
         return true;
-    }
+    }*/
 
     private boolean isAlpha(String name) {
         return name.matches("[ A-Za-z]+"); //^[ A-Za-z]+$

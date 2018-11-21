@@ -49,12 +49,14 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
 
     public static OnAsyncTaskInterface mAsyncInterface;
 
-    EditText[] etNumbers;
-    LinearLayout llDynamicNumber;
+    EditText[] etNumbers, etEmails, etWebsites;
+    LinearLayout llDynamicNumber, llDynamicEmail, llDynamicWebsite;
     ArrayList<String> alNumber = new ArrayList<>();
-    public TextInputLayout etName, etEmail, etWebsite;
+    ArrayList<String> alEmail = new ArrayList<>();
+    ArrayList<String> alWebsite = new ArrayList<>();
+    public TextInputLayout etName, etDesignation, etAddress;
     private ImageView ivBusinessCard;
-    String sName, sEmail, sWebsite;
+    String sName, sDesignation, sAddress;
     String sImagePath;
     Button btnSave;
     private HashMap<String, String> mMap;
@@ -111,9 +113,14 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_display_card, container, false);
         llDynamicNumber = view.findViewById(R.id.ll_dynamic_number);
+        llDynamicEmail = view.findViewById(R.id.ll_dynamic_email);
+        llDynamicWebsite = view.findViewById(R.id.ll_dynamic_website);
+
         etName = view.findViewById(R.id.et_name);
-        etEmail = view.findViewById(R.id.et_email);
-        etWebsite = view.findViewById(R.id.et_website);
+        etDesignation = view.findViewById(R.id.et_designation);
+        etAddress = view.findViewById(R.id.et_address);
+        //etEmail = view.findViewById(R.id.et_email);
+        //etWebsite = view.findViewById(R.id.et_website);
         ivBusinessCard = view.findViewById(R.id.iv_business_card);
         btnSave = view.findViewById(R.id.btn_save);
 
@@ -123,28 +130,53 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
             if (b.getSerializable("hashmap") != null) {
                 //noinspection unchecked
                 mMap = (HashMap<String, String>) b.getSerializable("hashmap");
+                //if (mMap.get("number") != null) {
+                //String[] saNumbers = mMap.get("number").split(",");
+                sName = mMap.get("name");
+                sDesignation = mMap.get("designation");
+
+                sAddress = mMap.get("address");
+                //sEmail = mMap.get("email");
+                //sWebsite = mMap.get("website");
+                sImagePath = mMap.get("image_url");
                 if (mMap.get("number") != null) {
-                    //String[] saNumbers = mMap.get("number").split(",");
-                    sName = mMap.get("name");
-                    sEmail = mMap.get("email");
-                    sWebsite = mMap.get("website");
-                    sImagePath = mMap.get("image_url");
                     HashSet<String> hsTmp = new HashSet<>(Arrays.asList(mMap.get("number").split(",")));
                     alNumber.addAll(hsTmp);
                 }
+                if (mMap.get("email") != null) {
+                    HashSet<String> hsTmp = new HashSet<>(Arrays.asList(mMap.get("email").split(",")));
+                    alEmail.addAll(hsTmp);
+                }
+                if (mMap.get("website") != null) {
+                    HashSet<String> hsTmp = new HashSet<>(Arrays.asList(mMap.get("website").split(",")));
+                    alWebsite.addAll(hsTmp);
+                }
+                //}
             }
         }
 
         etName.getEditText().setText(sName);
-        etEmail.getEditText().setText(sEmail);
-        etWebsite.getEditText().setText(sWebsite);
+        //etEmail.getEditText().setText(sEmail);
+        //etWebsite.getEditText().setText(sWebsite);
+        etDesignation.getEditText().setText(sDesignation);
         etNumbers = new EditText[alNumber.size()];
+        etEmails = new EditText[alEmail.size()];
+        etWebsites = new EditText[alWebsite.size()];
+        etAddress.getEditText().setText(sAddress);
         Bitmap bmImg = BitmapFactory.decodeFile(sImagePath);
         //Glide.with(getActivity()).load(bmImg).centerCrop().placeholder(R.drawable.camera_red).into(ivBusinessCard);
         ivBusinessCard.setImageBitmap(bmImg);
 
         for (int i = 0; i < etNumbers.length; i++) {
-            addDynamicContents(i);
+            addDynamicContents(i, llDynamicNumber,alNumber);
+        }
+
+        for (int i = 0; i < etEmails.length; i++) {
+            addDynamicContents(i, llDynamicEmail, alEmail);
+        }
+
+        for (int i = 0; i < etWebsites.length; i++) {
+            addDynamicContents(i, llDynamicWebsite, alWebsite);
         }
 
         btnSave.setOnClickListener(new View.OnClickListener() {
@@ -175,7 +207,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         mListener = null;
     }
 
-    void addDynamicContents(int pos) {
+    /*void addDynamicContents(int pos) {
         EditText etDynamicText = new EditText(getActivity());
 
         if (Build.VERSION.SDK_INT < 23) {
@@ -186,11 +218,29 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         }
         etDynamicText.setText(alNumber.get(pos));
         llDynamicNumber.addView(etDynamicText);
+    }*/
+
+    void addDynamicContents(int pos, LinearLayout llDynamicParent, ArrayList<String> alDynamicContents) {
+        EditText etDynamicText = new EditText(getActivity());
+        ArrayList<String> alContents;
+        LinearLayout llDynamicView;
+
+        alContents = alDynamicContents;
+        llDynamicView = llDynamicParent;
+
+        if (Build.VERSION.SDK_INT < 23) {
+            //noinspection deprecation
+            etDynamicText.setTextAppearance(getActivity(), R.style.TextAppearance_AppCompat_Medium);
+        } else {
+            etDynamicText.setTextAppearance(R.style.TextAppearance_AppCompat_Medium);
+        }
+        etDynamicText.setText(alContents.get(pos));
+        llDynamicView.addView(etDynamicText);
     }
 
     @Override
     public void onAsyncTaskComplete(String sCase, int nFlag) {
-        switch (nFlag){
+        switch (nFlag) {
             case 2:
                 getActivity().onBackPressed();
                 break;

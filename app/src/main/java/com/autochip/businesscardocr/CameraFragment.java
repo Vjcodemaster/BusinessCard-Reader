@@ -872,6 +872,7 @@ public class CameraFragment extends Fragment implements OnFragmentInteractionLis
         switch (TAG){
             case "IMAGE_PROCESS_COMPLETE":
                 //setProgressBar();
+                textRecognizer.release();
                 this.hmCardInfo = hmCardInfo;
                 takePicture();
                 /*hmCardInfo.put("image_url", imageFile.getAbsolutePath());
@@ -891,6 +892,9 @@ public class CameraFragment extends Fragment implements OnFragmentInteractionLis
             @Override
             public void onPictureTaken(byte[] bytes) {
                 try {
+                    cameraSource.stop();
+                    preview.stop();
+                    preview.release();
                     // convert byte array into bitmap
                     Bitmap loadedImage;
                     Bitmap rotatedBitmap;
@@ -966,9 +970,6 @@ public class CameraFragment extends Fragment implements OnFragmentInteractionLis
                             MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
                     getActivity().setResult(Activity.RESULT_OK); //add this
-                    cameraSource.stop();
-                    preview.stop();
-                    preview.release();
                     //getActivity().getSupportFragmentManager().popBackStack();
                     //onFragmentInteractionListener.onFragmentMessage("DATA_RECEIVED", rotatedBitmap, hmCardInfo);
                     loadDisplayFragment();

@@ -3,4 +3,6 @@
     <color name="colorPrimary">#FFFFFE</color>
     <color name="colorPrimaryDark">#FFFFFE</color><!-- #0288D1 -->
     <color name="colorAccent">#03A9F4</color>
+    <color name="transparent">#00000000</color>
+    <color name="semi_transparent">#99000000</color>
 </resources>

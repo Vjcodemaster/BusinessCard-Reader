@@ -28,8 +28,9 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
     private Context context;
     //private OnAsyncTaskInterface onAsyncTaskInterface;
     private ArrayList<Integer> alPosition = new ArrayList<>();
+    private StringBuilder sb;
     private HashMap<String, Object> hmDataList = new HashMap<>();
-    private HashMap<String, String> hmCardInfo = new HashMap<>();
+    private HashMap<String, Object> hmCardInfo = new HashMap<>();
     private int nOrderID = 191;
 
     /*public ScannerAsyncTask(Activity aActivity, OnAsyncTaskInterface onAsyncTaskInterface) {
@@ -44,7 +45,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
         this.onAsyncTaskInterface = onAsyncTaskInterface;
     }*/
 
-    public ScannerAsyncTask(Context context, HashMap<String, String> hmCardInfo) {
+    public ScannerAsyncTask(Context context, HashMap<String, Object> hmCardInfo) {
         this.context = context;
         this.hmCardInfo = hmCardInfo;
     }
@@ -130,7 +131,19 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
         //return isConnected;
     }
 
-    private void createContacts(){
+    private void createContacts() {
+        //240
+        try {
+            OdooConnect oc = OdooConnect.connect(SERVER_URL, PORT_NO, DB_NAME, USER_ID, PASSWORD);
+            Integer createCustomer = oc.create("res.partner", hmCardInfo);
+            IDS[0] = createCustomer;
+            createOne2Many(createCustomer);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*private void createContacts(){
         //240
         try {
             OdooConnect oc = OdooConnect.connect(SERVER_URL, PORT_NO, DB_NAME, USER_ID, PASSWORD);
@@ -140,7 +153,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
                 String sWebsite = hmCardInfo.get("website");
                 put("name", sName);
                 put("email", sEmail);
-                /*put("website", sWebsite);
+                *//*put("website", sWebsite);
 
                 ArrayList<String> alNumbers = new ArrayList<>(Arrays.asList(hmCardInfo.get("number").split(",")));
                 if(alNumbers.size()>1){
@@ -151,7 +164,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
                 } else {
                     String phone = alNumbers.get(0);
                     put("mobile", phone);
-                }*/
+                }*//*
                 //put("state", ORDER_STATE[0]);
             }});
             IDS[0] = createCustomer;
@@ -159,9 +172,9 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
         }catch (Exception e){
             e.printStackTrace();
         }
-    }
+    }*/
 
-    private void createOrder(){
+    private void createOrder() {
         //240
         try {
             OdooConnect oc = OdooConnect.connect(SERVER_URL, PORT_NO, DB_NAME, USER_ID, PASSWORD);
@@ -171,7 +184,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
             }});
             IDS[0] = createCustomer;
             createOne2Many(createCustomer);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -189,12 +202,16 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
                 put("service_id", ID); //one to many
             }});*/
 
+            sb = new StringBuilder();
+            sb.append(hmCardInfo.get("name"));
+            sb.append(" ");
+            sb.append("has been added");
             //if (alOne2ManyModelNames.size() >= 1) {
-                @SuppressWarnings("unchecked")
-                Integer one2Many = oc.create("crm.lead", new HashMap() {{
-                    put("partner_id", ID);
-                    put("name", "NA");
-                }});
+            @SuppressWarnings("unchecked")
+            Integer one2Many = oc.create("crm.lead", new HashMap() {{
+                put("partner_id", ID);
+                put("name", sb.toString());
+            }});
             IDS[1] = one2Many;
             //}
 
@@ -205,12 +222,12 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
         //return one2Many;
     }
 
-    private void placeOrder(){
+    private void placeOrder() {
         //240
         try {
             OdooConnect oc = OdooConnect.connect(SERVER_URL, PORT_NO, DB_NAME, USER_ID, PASSWORD);
             Boolean idC = oc.write("sale.order", new Object[]{nOrderID}, hmDataList);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -262,9 +279,9 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
             alData.add(productsData.get(i).get("id").toString());
             //alData.add(data.get(i).get("name").toString());
             alData.add(productsData.get(i).get("list_price").toString());
-            for(int j=0; j< imageData.size(); j++){
+            for (int j = 0; j < imageData.size(); j++) {
                 String base64 = imageData.get(j).get("store_fname").toString();
-                if(imageData.get(j).get("res_name").toString().equals(sName)){
+                if (imageData.get(j).get("res_name").toString().equals(sName)) {
                     alData.add(base64);
                     alPosition.add(i);
                     break;

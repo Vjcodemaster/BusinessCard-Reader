@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -163,12 +165,67 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         etEmails = new EditText[alEmail.size()];
         etWebsites = new EditText[alWebsite.size()];
         etAddress.getEditText().setText(sAddress);
+
+        etName.getEditText().addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                String sName = etName.getEditText().getText().toString();
+                mMap.put("name", sName);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        etDesignation.getEditText().addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                String sDesignation = etDesignation.getEditText().getText().toString();
+                mMap.put("designation", sDesignation);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        etAddress.getEditText().addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                String sAddress = etAddress.getEditText().getText().toString();
+                mMap.put("address", sAddress);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
         Bitmap bmImg = BitmapFactory.decodeFile(sImagePath);
         //Glide.with(getActivity()).load(bmImg).centerCrop().placeholder(R.drawable.camera_red).into(ivBusinessCard);
         ivBusinessCard.setImageBitmap(bmImg);
 
         for (int i = 0; i < etNumbers.length; i++) {
-            addDynamicContents(i, llDynamicNumber,alNumber);
+            addDynamicContents(i, llDynamicNumber, alNumber);
         }
 
         for (int i = 0; i < etEmails.length; i++) {
@@ -182,8 +239,57 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                LinkedHashMap<String, String> lhmData = new LinkedHashMap<>(mMap);
+                HashMap<String, Object> hmFinalData = new HashMap<>();
+                ArrayList<String> alKeys = new ArrayList<>(lhmData.keySet());
 
-                ScannerAsyncTask scannerAsyncTask = new ScannerAsyncTask(getActivity(), mMap);
+                ArrayList<String> alValues = new ArrayList<>(lhmData.values());
+                String sTmp;
+
+                for (int i = 0; i < alValues.size(); i++) {
+                    boolean isMultipleContent = false;
+                    switch (alKeys.get(i)) {
+                        case "number":
+                            String sNumber = alValues.get(i);
+                            String[] saValues = sNumber.split(",");
+                            if (saValues.length > 1) {
+                                sTmp = "mobile";
+                                Object obj = saValues[1];
+                                hmFinalData.put(sTmp, obj);
+                                sTmp = "phone";
+                                Object obj1 = saValues[0];
+                                hmFinalData.put(sTmp, obj1);
+                                isMultipleContent = true;
+                            } else {
+                                sTmp = "phone";
+                            }
+                            break;
+                        case "address":
+                            sTmp = "street";
+                            break;
+                        case "designation":
+                            sTmp = "function";
+                            break;
+                        case "email":
+                            sTmp = "email";
+                            String sEmail = alValues.get(i);
+                            String[] saEmailValues = sEmail.split(",");
+                            if (saEmailValues.length > 1) {
+                                hmFinalData.put(sTmp, saEmailValues[0]);
+                                isMultipleContent = true;
+                            }
+                            break;
+                        default:
+                            sTmp = alKeys.get(i);
+                            break;
+                    }
+                    if (!isMultipleContent) {
+                        Object obj = alValues.get(i);
+                        hmFinalData.put(sTmp, obj);
+                    }
+                }
+
+                ScannerAsyncTask scannerAsyncTask = new ScannerAsyncTask(getActivity(), hmFinalData);
                 scannerAsyncTask.execute(String.valueOf(2), "");
             }
         });

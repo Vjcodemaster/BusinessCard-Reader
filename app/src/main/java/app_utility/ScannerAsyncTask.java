@@ -88,7 +88,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
     @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-        if (ERROR_CODE != 0) {
+        /*if (ERROR_CODE != 0) {
             switch (ERROR_CODE) {
                 case NETWORK_ERROR_CODE:
                     unableToConnectServer(ERROR_CODE);
@@ -96,8 +96,12 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
             }
             ERROR_CODE = 0;
             return;
-        }
+        }*/
         switch (type) {
+            case NETWORK_ERROR_CODE:
+                unableToConnectServer(ERROR_CODE);
+                type = 0;
+                break;
             case 2:
                 Toast.makeText(context, "Saved Successfully" + "with ID : " + IDS[0] + "," + IDS[1], Toast.LENGTH_LONG).show();
                 DisplayCardFragment.mAsyncInterface.onAsyncTaskComplete("CASE_2", 2);
@@ -123,7 +127,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
                 sMsgResult = "Connection error";
             }
         } catch (Exception ex) {
-            ERROR_CODE = NETWORK_ERROR_CODE;
+            type = NETWORK_ERROR_CODE;
             // Any other exception
             sMsgResult = "Error: " + ex;
         }
@@ -137,8 +141,9 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
             OdooConnect oc = OdooConnect.connect(SERVER_URL, PORT_NO, DB_NAME, USER_ID, PASSWORD);
             Integer createCustomer = oc.create("res.partner", hmCardInfo);
             IDS[0] = createCustomer;
-            createOne2Many(createCustomer);
+            //createOne2Many(createCustomer);
         } catch (Exception e) {
+            type = NETWORK_ERROR_CODE;
             e.printStackTrace();
         }
     }
@@ -292,6 +297,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
     }
 
     private void unableToConnectServer(int errorCode) {
+        Toast.makeText(context, "Unable to contact server, please try again later...", Toast.LENGTH_LONG).show();
         //MainActivity.asyncInterface.onAsyncTaskCompleteGeneral("SERVER_ERROR", 2001, errorCode, "", null);
     }
 

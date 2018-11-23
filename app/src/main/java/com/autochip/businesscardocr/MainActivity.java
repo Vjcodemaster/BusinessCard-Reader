@@ -11,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -36,12 +37,18 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     public static String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA};
     private int nPermissionFlag = 0;
     public static OnFragmentInteractionListener onFragmentInteractionListener;
-
+    public static int height;
+    public static int width;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         onFragmentInteractionListener = this;
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        height = displayMetrics.heightPixels;
+        width = displayMetrics.widthPixels;
         initViews();
     }
 

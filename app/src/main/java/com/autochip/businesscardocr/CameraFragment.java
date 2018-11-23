@@ -18,9 +18,11 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.util.SparseArray;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -79,6 +81,7 @@ public class CameraFragment extends Fragment implements OnFragmentInteractionLis
     private CameraSourcePreview preview;
     private GraphicOverlay<OcrGraphic> graphicOverlay;
     private ImageButton ibCapture;
+    private View vFocus;
     TextRecognizer textRecognizer;
     HashMap<String, String> hmCardInfo = new HashMap<>();
     String[] websiteMatches = new String[]{"ww.","vw.","www."};
@@ -141,6 +144,18 @@ public class CameraFragment extends Fragment implements OnFragmentInteractionLis
         preview = view.findViewById(R.id.preview);
         graphicOverlay = view.findViewById(R.id.graphicOverlay);
         ibCapture = view.findViewById(R.id.ib_capture);
+        vFocus = view.findViewById(R.id.view_focus);
+
+        double nFinalWidth = MainActivity.width / 1.15;
+        double nFinalHeight = MainActivity.height / 3.5;
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER;
+        params.width = (int)nFinalWidth;
+        params.height = (int)nFinalHeight;
+
+        //vFocus.setLayoutParams(new FrameLayout.LayoutParams((int) (nFinalWidth), (int)nFinalHeight));
+        vFocus.setLayoutParams(params);
 
         ibCapture.setOnClickListener(new View.OnClickListener() {
             @Override

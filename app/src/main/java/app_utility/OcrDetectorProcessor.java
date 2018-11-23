@@ -237,6 +237,12 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                         return false;
                 }
             }
+        } else if(saAddress.length ==1){ //if anything goes wrong in identifying address then remove else if statement
+            String sN = hmCardData.get("name");
+            String sD = hmCardData.get("designation");
+
+            if(saAddress[0].equals(sN) && saAddress[0].equals(sD) && saAddress[0].contains("&"))
+                return  false;
         }
         return true;
     }

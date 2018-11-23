@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 
+import app_utility.NetworkState;
 import app_utility.OnAsyncTaskInterface;
 import app_utility.OnFragmentInteractionListener;
 import app_utility.ScannerAsyncTask;
@@ -63,6 +65,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
     String sImagePath;
     Button btnSave;
     private HashMap<String, String> mMap;
+    private NetworkState networkState;
 
     public DisplayCardFragment() {
         // Required empty public constructor
@@ -90,6 +93,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mAsyncInterface = this;
+        networkState = new NetworkState();
     }
 
     @Override
@@ -207,6 +211,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
             etNumbers[i].addTextChangedListener(new TextWatcher() {
                 String sPreviousWebsite;
                 String sName;
+
                 @Override
                 public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                     sPreviousWebsite = charSequence.toString();
@@ -232,6 +237,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
             etEmails[i].addTextChangedListener(new TextWatcher() {
                 String sPreviousWebsite;
                 String sName;
+
                 @Override
                 public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                     sPreviousWebsite = charSequence.toString();
@@ -257,6 +263,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
             etWebsites[i].addTextChangedListener(new TextWatcher() {
                 String sPreviousWebsite;
                 String sName;
+
                 @Override
                 public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                     sPreviousWebsite = charSequence.toString();
@@ -283,58 +290,62 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LinkedHashMap<String, String> lhmData = new LinkedHashMap<>(mMap);
-                HashMap<String, Object> hmFinalData = new HashMap<>();
-                ArrayList<String> alKeys = new ArrayList<>(lhmData.keySet());
+                if (!networkState.isNetworkAvailable(getActivity()) && !networkState.isOnline()) {
+                    Toast.makeText(getActivity(), "No Internet connection", Toast.LENGTH_LONG).show();
+                } else {
+                    LinkedHashMap<String, String> lhmData = new LinkedHashMap<>(mMap);
+                    HashMap<String, Object> hmFinalData = new HashMap<>();
+                    ArrayList<String> alKeys = new ArrayList<>(lhmData.keySet());
 
-                ArrayList<String> alValues = new ArrayList<>(lhmData.values());
-                String sTmp;
+                    ArrayList<String> alValues = new ArrayList<>(lhmData.values());
+                    String sTmp;
 
-                for (int i = 0; i < alValues.size(); i++) {
-                    boolean isMultipleContent = false;
-                    switch (alKeys.get(i)) {
-                        case "number":
-                            String sNumber = alValues.get(i);
-                            String[] saValues = sNumber.split(",");
-                            if (saValues.length > 1) {
-                                sTmp = "mobile";
-                                Object obj = saValues[1];
-                                hmFinalData.put(sTmp, obj);
-                                sTmp = "phone";
-                                Object obj1 = saValues[0];
-                                hmFinalData.put(sTmp, obj1);
-                                isMultipleContent = true;
-                            } else {
-                                sTmp = "phone";
-                            }
-                            break;
-                        case "address":
-                            sTmp = "street";
-                            break;
-                        case "designation":
-                            sTmp = "function";
-                            break;
-                        case "email":
-                            sTmp = "email";
-                            String sEmail = alValues.get(i);
-                            String[] saEmailValues = sEmail.split(",");
-                            if (saEmailValues.length > 1) {
-                                hmFinalData.put(sTmp, saEmailValues[0]);
-                                isMultipleContent = true;
-                            }
-                            break;
-                        default:
-                            sTmp = alKeys.get(i);
-                            break;
+                    for (int i = 0; i < alValues.size(); i++) {
+                        boolean isMultipleContent = false;
+                        switch (alKeys.get(i)) {
+                            case "number":
+                                String sNumber = alValues.get(i);
+                                String[] saValues = sNumber.split(",");
+                                if (saValues.length > 1) {
+                                    sTmp = "mobile";
+                                    Object obj = saValues[1];
+                                    hmFinalData.put(sTmp, obj);
+                                    sTmp = "phone";
+                                    Object obj1 = saValues[0];
+                                    hmFinalData.put(sTmp, obj1);
+                                    isMultipleContent = true;
+                                } else {
+                                    sTmp = "phone";
+                                }
+                                break;
+                            case "address":
+                                sTmp = "street";
+                                break;
+                            case "designation":
+                                sTmp = "function";
+                                break;
+                            case "email":
+                                sTmp = "email";
+                                String sEmail = alValues.get(i);
+                                String[] saEmailValues = sEmail.split(",");
+                                if (saEmailValues.length > 1) {
+                                    hmFinalData.put(sTmp, saEmailValues[0]);
+                                    isMultipleContent = true;
+                                }
+                                break;
+                            default:
+                                sTmp = alKeys.get(i);
+                                break;
+                        }
+                        if (!isMultipleContent) {
+                            Object obj = alValues.get(i);
+                            hmFinalData.put(sTmp, obj);
+                        }
                     }
-                    if (!isMultipleContent) {
-                        Object obj = alValues.get(i);
-                        hmFinalData.put(sTmp, obj);
-                    }
+
+                    ScannerAsyncTask scannerAsyncTask = new ScannerAsyncTask(getActivity(), hmFinalData);
+                    scannerAsyncTask.execute(String.valueOf(2), "");
                 }
-
-                ScannerAsyncTask scannerAsyncTask = new ScannerAsyncTask(getActivity(), hmFinalData);
-                scannerAsyncTask.execute(String.valueOf(2), "");
             }
         });
         return view;
@@ -386,7 +397,7 @@ public class DisplayCardFragment extends Fragment implements OnAsyncTaskInterfac
         }
         etDynamicText.setText(alContents.get(pos));
         llDynamicView.addView(etDynamicText);
-        switch (nCase){
+        switch (nCase) {
             case 1:
                 etNumbers[pos] = etDynamicText;
                 break;

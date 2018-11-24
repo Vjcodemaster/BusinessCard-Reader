@@ -36,6 +36,8 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
     private String s1;
     private boolean isNamePresent = false;
     private boolean isDesignationPresent = false;
+    String[] saAddressChecker = {"website", "web", "address"};
+    String[] saEmailChecker = {"mail-", "Email", ":", "Email:", "al", "ail-"};
 
     public GraphicOverlay<OcrGraphic> graphicOverlay;
     private HashMap<String, String> hmCardData = new HashMap<>();
@@ -153,14 +155,14 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                             sb = new StringBuilder();
                             sb.append(hmCardData.get("email"));
                             sb.append(",");
-                            sb.append(sEmail);
+                            sb.append(prefixChecker("EMAIL", sEmail.trim(), saEmailChecker));
                             hmCardData.put("email", sb.toString());
                         } else {
-                            hmCardData.put("email", sEmail);
+                            hmCardData.put("email", prefixChecker("EMAIL", sEmail.trim(), saEmailChecker));
                         }
                     }
                 } else {
-                    hmCardData.put("email", s);
+                    hmCardData.put("email", prefixChecker("EMAIL", s.trim(), saEmailChecker));
                 }
             } else if (s.contains("w.")) {
                 String[] saWebsite = null;
@@ -175,14 +177,14 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                             sb = new StringBuilder();
                             sb.append(hmCardData.get("website"));
                             sb.append(",");
-                            sb.append(sWebsite);
+                            sb.append(prefixChecker("WEBSITE", sWebsite.trim(), null));
                             hmCardData.put("website", sb.toString());
                         } else {
-                            hmCardData.put("website", sWebsite);
+                            hmCardData.put("website", prefixChecker("WEBSITE", sWebsite.trim(), null));
                         }
                     }
                 } else {
-                    hmCardData.put("website", s);
+                    hmCardData.put("website", prefixChecker("WEBSITE", s.trim(), null));
                 }
             } else if (matchesPinCondition(s) || isAddress(s)) {
                 if (hmCardData.containsKey("address")) {
@@ -197,6 +199,26 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
         }
     }
 
+    /*if (saWebsite != null && saWebsite.length >= 1) {
+        for (String sWebsite : saWebsite) {
+            if (hmCardData.containsKey("website")) {
+                sb = new StringBuilder();
+                sb.append(hmCardData.get("website"));
+                sb.append(",");
+                if(!sWebsite.startsWith("w.") || !sWebsite.startsWith("ww.")){
+                    int dotIndex = sWebsite.indexOf(".");
+                    String sFinalWebsite = "www." + sWebsite.substring(dotIndex, sWebsite.length()-1);
+                }
+                sb.append(sWebsite);
+                hmCardData.put("website", sb.toString());
+            } else {
+                hmCardData.put("website", sWebsite);
+            }
+        }
+    } else {
+        hmCardData.put("website", s);
+    }*/
+
     /*private boolean isAlphaLoop(String name) {
         for (String s : name.split(",")) {
             if (!s.matches("[ A-Za-z]+")) {
@@ -205,6 +227,31 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
         }
         return true;
     }*/
+/*
+
+ */
+    private String prefixChecker(String sCase, String sToCheck, String[] saChecker) {
+        switch (sCase){
+            case "EMAIL":
+                for (String checker : saChecker) {
+                    if (sToCheck.equals(checker)) {
+                        return checker.substring(checker.length() - 1, sToCheck.length() - 1);
+                    }
+                    /*if(i == saChecker.length-1){
+                        return sToCheck;
+                    }*/
+                }
+                break;
+            case "WEBSITE":
+                if(!sToCheck.startsWith("www.")){
+                    int dotIndex = sToCheck.indexOf(".");
+                    return "www" + sToCheck.substring(dotIndex, sToCheck.length());
+                }
+                break;
+        }
+
+        return sToCheck;
+    }
 
     private boolean isAlpha(String name) {
         return name.matches("[ A-Za-z]+"); //^[ A-Za-z]+$
@@ -225,25 +272,32 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
         return s1.length() > 4 && s1.length() < 7;
     }
 
+
     private boolean isAddress(String sAddress) {
+        //String[] saAddressSpace = sAddress.split(" ");
         String[] saAddress = sAddress.split(",");
-        if (saAddress.length >= 3) {
+        if (saAddress.length >= 2) {
             for (String sAddressCheck : saAddress) {
-                if (sAddressCheck.contains("@") || matchesLengthCondition(sAddressCheck)) {
+                if (sAddressCheck.contains("@") || sAddressCheck.contains("&"))
+                    return false;
+                if (matchesLengthCondition(sAddressCheck)) {
                     String sN = hmCardData.get("name");
                     String sD = hmCardData.get("designation");
 
-                    if (sAddressCheck.equals(sN) || sAddressCheck.equals(sD) || sAddressCheck.contains("&"))
+                    if (sAddressCheck.equals(sN) || sAddressCheck.equals(sD))
                         return false;
                 }
             }
-        } else if(saAddress.length ==1){ //if anything goes wrong in identifying address then remove else if statement
+        } else {
+            return false;
+        }
+        /*else if(saAddress.length ==1){ //if anything goes wrong in identifying address then remove else if statement
             String sN = hmCardData.get("name");
             String sD = hmCardData.get("designation");
 
             if(saAddress[0].equals(sN) && saAddress[0].equals(sD) && saAddress[0].contains("&"))
                 return  false;
-        }
+        }*/
         return true;
     }
 

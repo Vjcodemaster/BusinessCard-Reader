@@ -17,7 +17,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import app_utility.OnFragmentInteractionListener;
@@ -34,11 +33,12 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     private LinearLayout llDisplay;
 
     private int CAMERA_CODE = 1777;
-    public static String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA};
+    public static String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private int nPermissionFlag = 0;
     public static OnFragmentInteractionListener onFragmentInteractionListener;
     public static int height;
     public static int width;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,7 +108,25 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
                             }
                         }
                         break;
-
+                    case Manifest.permission.WRITE_EXTERNAL_STORAGE:
+                        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                                //Show permission explanation dialog...
+                                //showPermissionExplanation(SignInActivity.this.getResources().getString(R.string.phone_explanation));
+                                //Toast.makeText(SignInActivity.this, "not given", Toast.LENGTH_SHORT).show();
+                                sMSG.append("STORAGE, ");
+                                nPermissionFlag = 0;
+                            } else {
+                                //Never ask again selected, or device policy prohibits the app from having that permission.
+                                //So, disable that feature, or fall back to another situation...
+                                //@SuppressWarnings("unused") AlertDialogs alertDialogs = new AlertDialogs(HomeScreen.this, 1, mListener);
+                                //Toast.makeText(SignInActivity.this, "permission never ask", Toast.LENGTH_SHORT).show();
+                                //showPermissionExplanation(HomeScreenActivity.this.getResources().getString(R.string.phone_explanation));
+                                sMSG.append("STORAGE, ");
+                                nPermissionFlag = 0;
+                            }
+                        }
+                        break;
                 }
             }
             if (!sMSG.toString().equals("") && !sMSG.toString().equals(" ")) {
@@ -128,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
                 String sNumbers = hsCardInfo.get("number");
                 String[] saNumbers;
-                if (sNumbers!=null && sNumbers.length()>=9) {
+                if (sNumbers != null && sNumbers.length() >= 9) {
                     saNumbers = sNumbers.split(",");
                     tvPhoneNo.setText(saNumbers[0]);
                 }
@@ -137,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     }
 
     @Override
-    public void onBackPressed(){
+    public void onBackPressed() {
         super.onBackPressed();
         int count = getSupportFragmentManager().getBackStackEntryCount();
         if (count > 0) {

@@ -3,13 +3,13 @@ package app_utility;
 
 public class StaticReferenceClass {
     public static final String LOGIN_URL = "192.168.1.26";//"http://192.168.1.46";//http://192.168.1.100:9040//
-    public static final String SERVER_URL = "192.168.1.41";//"192.168.1.46";//"192.168.42.192";//"192.168.1.41";//https://"18.222.197.80";//"autochipars.odoo.com";//
-    public static final int PORT_NO = 7000;//9040;//9060;//8069;//
+    public static final String SERVER_URL = "166.62.125.168";//"acsales.odoo.com";//"192.168.1.41";//"192.168.1.46";//"192.168.42.192";//"192.168.1.41";//https://"18.222.197.80";//"autochipars.odoo.com";//
+    public static final int PORT_NO = 9070;//8069;//7000;//9040;//9060;//
 
 
-    public static final String DB_NAME = "Trufrost";//"Shridhar-Live-1003";//"ARS";//"chellaminfotech-ars-master-73173";//"ARS_9040";//"test_db";//
+    public static final String DB_NAME = "ac_sales";//"chellaminfotech-aftersales-modules-master-193979";//"Trufrost";//"Shridhar-Live-1003";//"ARS";//"chellaminfotech-ars-master-73173";//"ARS_9040";//"test_db";//
     public static final String USER_ID = "admin";//"vijay@gmail.com";//"vijay.eh4@gmail.com";//"suresh";//
-    public static final String PASSWORD = "a";//"autochip";//"admin";//"autochip@505";//
+    public static final String PASSWORD = "autochip@505";//"a";//"autochip";//"admin";//
     public static final String MODEL_NAME = "res.partner";
 
     public static final String[] ORDER_STATE = {"draft", "sent", "cancel"};

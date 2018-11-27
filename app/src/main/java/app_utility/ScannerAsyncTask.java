@@ -141,7 +141,7 @@ public class ScannerAsyncTask extends AsyncTask<String, Void, String> {
             OdooConnect oc = OdooConnect.connect(SERVER_URL, PORT_NO, DB_NAME, USER_ID, PASSWORD);
             Integer createCustomer = oc.create("res.partner", hmCardInfo);
             IDS[0] = createCustomer;
-            //createOne2Many(createCustomer);
+            createOne2Many(createCustomer);
         } catch (Exception e) {
             type = NETWORK_ERROR_CODE;
             e.printStackTrace();

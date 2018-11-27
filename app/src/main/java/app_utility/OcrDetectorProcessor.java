@@ -63,8 +63,8 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                 if (item != null && item.getValue() != null) {
                     Log.d("OcrDetectorProcessor", "Text detected! " + item.getValue());
                     //hmCardData.add(item.getValue());
-                    OcrGraphic graphic = new OcrGraphic(graphicOverlay, item);
-                    graphicOverlay.add(graphic);
+                    //OcrGraphic graphic = new OcrGraphic(graphicOverlay, item);
+                    //graphicOverlay.add(graphic);
                     //separateeAllInfo(item.getValue());
                     if (item.getValue().length() >= 3)
                         separateData(item.getValue());
